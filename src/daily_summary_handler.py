@@ -1,53 +1,45 @@
 import json
 import os
 import boto3
-from dotenv import load_dotenv
+import asyncio  # 1. Importe a biblioteca asyncio
 
-load_dotenv()
+from core.supabase_client import create_supabase_client
 
-# Verifica se estamos em ambiente local
-IS_LOCAL = os.environ.get("AWS_SAM_LOCAL") == "true"
-
-# Configurações do SQS
 SQS_QUEUE_URL = os.environ.get("SQS_QUEUE_URL")
-sqs_client_config = {}
-
-if IS_LOCAL:
-    # Se for local, aponta para o LocalStack
-    # Use a URL que você obteve no passo 2
-    SQS_QUEUE_URL = "http://localhost:4566/000000000000/MailDigest-SummaryJobQueue"
-    sqs_client_config["endpoint_url"] = "http://localhost:4566"
-
-sqs = boto3.client("sqs", **sqs_client_config)
+sqs = boto3.client("sqs")  # Não precisa mais de configuração de endpoint
 
 
-def get_active_accounts_from_db():
+async def get_active_accounts_from_db():
     """
-    Função de exemplo para simular a busca de IDs de contas ativas do Supabase.
-    Aqui você deve conectar ao seu banco de dados real.
+    Esta função permanece exatamente igual, pois já é assíncrona.
     """
     print("Buscando contas ativas no banco de dados...")
-    # Exemplo: Substitua isso pela sua consulta real ao banco de dados
-    return [
-        {"accountId": "uuid-da-conta-123"},
-        {"accountId": "uuid-da-conta-456"},
-        {"accountId": "uuid-da-conta-789"},
-    ]
+    supabase = await create_supabase_client()
+    try:
+        response = (
+            await supabase.table("mail_accounts")
+            .select("id, user_id, is_active")
+            .eq("is_active", True)
+            .execute()
+        )
+        active_accounts = response.data
+        print(f"Encontradas {len(active_accounts)} contas ativas.")
+        return active_accounts
+    except Exception as e:
+        print(f"Erro ao buscar contas ativas: {e}")
+        raise e
 
 
-def lambda_handler(event, context):
+async def main_logic(event, context):
     """
-    Esta função é o "Dispatcher". Ela é acionada por um agendamento, busca todas
-    as contas ativas do banco de dados e envia uma mensagem para uma fila SQS
-    para que cada conta seja processada individualmente.
+    2. Toda a sua lógica principal foi movida para esta função async.
     """
     if not SQS_QUEUE_URL:
         raise EnvironmentError(
             "A variável de ambiente SQS_QUEUE_URL não está definida."
         )
 
-    # 1. Busca todas as contas ativas do seu banco de dados (Supabase)
-    active_accounts = get_active_accounts_from_db()
+    active_accounts = await get_active_accounts_from_db()
 
     if not active_accounts:
         print("Nenhuma conta ativa encontrada para processar.")
@@ -59,20 +51,18 @@ def lambda_handler(event, context):
     print(
         f"Encontradas {len(active_accounts)} contas para processar. Enviando para a fila SQS..."
     )
-
     success_count = 0
     failure_count = 0
 
-    # 2. Itera sobre as contas e envia uma mensagem para a SQS para cada uma
     for account in active_accounts:
-        account_id = account.get("accountId")
+        account_id = account.get("id")
         if not account_id:
             print(f"Pulando registro por falta de accountId: {account}")
             failure_count += 1
             continue
-
         try:
             message_body = json.dumps({"accountId": account_id})
+            # (Veja a nota sobre o Boto3 abaixo)
             sqs.send_message(QueueUrl=SQS_QUEUE_URL, MessageBody=message_body)
             print(f"Mensagem enviada com sucesso para a conta: {account_id}")
             success_count += 1
@@ -81,7 +71,6 @@ def lambda_handler(event, context):
             failure_count += 1
 
     print(f"Despacho concluído. Sucessos: {success_count}, Falhas: {failure_count}")
-
     return {
         "statusCode": 200,
         "body": json.dumps(
@@ -92,3 +81,13 @@ def lambda_handler(event, context):
             }
         ),
     }
+
+
+def lambda_handler(event, context):
+    """
+    3. Este é o novo handler síncrono que a AWS Lambda vai chamar.
+       Ele atua como uma "ponte" para o nosso código assíncrono.
+    """
+    # A mágica está aqui: asyncio.run() executa a nossa função async
+    # e espera ela terminar, retornando o resultado.
+    return asyncio.run(main_logic(event, context))

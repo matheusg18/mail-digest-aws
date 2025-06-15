@@ -5,6 +5,15 @@ Description: >
 
   Backend for the MailDigest application, containing a scheduled task for summaries and a webhook for Telegram.
 
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues:
+      - dev
+      - prod
+    Description: Environment name
+
 Globals:
   Function:
     Timeout: 30
@@ -14,6 +23,20 @@ Globals:
     Tags:
       Project: mail-digest
       ManagedBy: SAM
+      Environment: !Ref Environment
+    Environment:
+      Variables:
+        ENVIRONMENT: !Ref Environment
+        SUPABASE_URL_SSM_NAME: !Sub "/mail-digest/${Environment}/supabase-url"
+        SUPABASE_SERVICE_KEY_SSM_NAME: !Sub "/mail-digest/${Environment}/supabase-service-key"
+        OPENAI_API_KEY_SSM_NAME: !Sub "/mail-digest/${Environment}/openai-api-key"
+        GOOGLE_CLIENT_ID_SSM_NAME: !Sub "/mail-digest/${Environment}/google-client-id"
+        GOOGLE_CLIENT_SECRET_SSM_NAME: !Sub "/mail-digest/${Environment}/google-client-secret"
+        TELEGRAM_BOT_TOKEN_SSM_NAME: !Sub "/mail-digest/${Environment}/telegram-bot-token"
+        LANGSMITH_TRACING_SSM_NAME: !Sub "/mail-digest/${Environment}/langsmith-tracing"
+        LANGSMITH_ENDPOINT_SSM_NAME: !Sub "/mail-digest/${Environment}/langsmith-endpoint"
+        LANGSMITH_API_KEY_SSM_NAME: !Sub "/mail-digest/${Environment}/langsmith-api-key"
+        LANGSMITH_PROJECT_SSM_NAME: !Sub "/mail-digest/${Environment}/langsmith-project"
   Api:
     TracingEnabled: true
 
@@ -21,7 +44,7 @@ Resources:
   SummaryJobQueue:
     Type: AWS::SQS::Queue
     Properties:
-      QueueName: "MailDigest-SummaryJobQueue"
+      QueueName: !Sub "MailDigest-SummaryJobQueue-${Environment}"
       VisibilityTimeout: 300
       RedrivePolicy:
         deadLetterTargetArn: !GetAtt SummaryJobDLQ.Arn
@@ -30,7 +53,7 @@ Resources:
   SummaryJobDLQ:
     Type: AWS::SQS::Queue
     Properties:
-      QueueName: "MailDigest-SummaryJobDLQ"
+      QueueName: !Sub "MailDigest-SummaryJobDLQ-${Environment}"
 
   DailySummaryFunction:
     Type: AWS::Serverless::Function
@@ -44,15 +67,22 @@ Resources:
       Policies:
         - SQSSendMessagePolicy:
             QueueName: !GetAtt SummaryJobQueue.QueueName
+        - Statement:
+            - Effect: Allow
+              Action:
+                - ssm:GetParameters
+                - ssm:GetParameter
+              Resource: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/mail-digest/${Environment}/*"
       Environment:
         Variables:
           SQS_QUEUE_URL: !Ref SummaryJobQueue
+          FUNCTION_NAME: "DailySummaryFunction"
       Events:
         DailySummaryTrigger:
           Type: Schedule
           Properties:
             Schedule: "cron(0 23 * * ? *)"
-            Name: MailDigest-DailyTrigger
+            Name: !Sub "MailDigest-DailyTrigger-${Environment}"
             Description: Aciona o dispatcher de resumos diários
 
   SummaryWorkerFunction:
@@ -64,6 +94,16 @@ Resources:
       Runtime: python3.13
       Architectures:
         - x86_64
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - ssm:GetParameters
+                - ssm:GetParameter
+              Resource: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/mail-digest/${Environment}/*"
+      Environment:
+        Variables:
+          FUNCTION_NAME: "SummaryWorkerFunction"
       Events:
         SummaryJobQueueTrigger:
           Type: SQS
@@ -79,6 +119,16 @@ Resources:
       Runtime: python3.13
       Architectures:
         - x86_64
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - ssm:GetParameters
+                - ssm:GetParameter
+              Resource: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/mail-digest/${Environment}/*"
+      Environment:
+        Variables:
+          FUNCTION_NAME: "TelegramWebhookFunction"
       Events:
         TelegramWebhook:
           Type: Api
@@ -93,6 +143,7 @@ Resources:
         Fn::Sub: ApplicationInsights-SAM-${AWS::StackName}
       ResourceQuery:
         Type: CLOUDFORMATION_STACK_1_0
+
   ApplicationInsightsMonitoring:
     Type: AWS::ApplicationInsights::Application
     Properties:
@@ -103,7 +154,7 @@ Resources:
 Outputs:
   TelegramWebhookApi:
     Description: API Gateway endpoint URL for Telegram Webhook function
-    Value: !Sub "https://://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/telegram-webhook/"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/telegram-webhook/"
   DailySummaryFunctionArn:
     Description: ARN da função Lambda "Dispatcher" de Resumo Diário
     Value: !GetAtt DailySummaryFunction.Arn

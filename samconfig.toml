@@ -32,3 +32,23 @@ warm_containers = "EAGER"
 
 [default.local_start_lambda.parameters]
 warm_containers = "EAGER"
+
+[dev]
+[dev.deploy]
+[dev.deploy.parameters]
+stack_name = "mail-digest-lambda-dev"
+parameter_overrides = ["Environment=dev"]
+resolve_s3 = true
+s3_prefix = "mail-digest-lambda-dev"
+region = "sa-east-1"
+capabilities = "CAPABILITY_IAM"
+
+[prod]
+[prod.deploy]
+[prod.deploy.parameters]
+stack_name = "mail-digest-lambda-prod"
+parameter_overrides = ["Environment=prod"]
+resolve_s3 = true
+s3_prefix = "mail-digest-lambda-prod"
+region = "sa-east-1"
+capabilities = "CAPABILITY_IAM"
