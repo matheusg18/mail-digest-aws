@@ -18,22 +18,58 @@ Globals:
     TracingEnabled: true
 
 Resources:
+  SummaryJobQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: "MailDigest-SummaryJobQueue"
+      VisibilityTimeout: 300
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt SummaryJobDLQ.Arn
+        maxReceiveCount: 3
+
+  SummaryJobDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: "MailDigest-SummaryJobDLQ"
+
   DailySummaryFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Timeout: 300
+      Timeout: 60
       CodeUri: src/
       Handler: daily_summary_handler.lambda_handler
       Runtime: python3.13
       Architectures:
         - x86_64
+      Policies:
+        - SQSSendMessagePolicy:
+            QueueName: !GetAtt SummaryJobQueue.QueueName
+      Environment:
+        Variables:
+          SQS_QUEUE_URL: !Ref SummaryJobQueue
       Events:
         DailySummaryTrigger:
           Type: Schedule
           Properties:
-            Schedule: "cron(0 20 * * ? *)"
+            Schedule: "cron(0 23 * * ? *)"
             Name: MailDigest-DailyTrigger
-            Description: Triggers the daily email summary lambda
+            Description: Aciona o dispatcher de resumos diários
+
+  SummaryWorkerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Timeout: 300
+      CodeUri: src/
+      Handler: summary_worker_handler.lambda_handler
+      Runtime: python3.13
+      Architectures:
+        - x86_64
+      Events:
+        SummaryJobQueueTrigger:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt SummaryJobQueue.Arn
+            BatchSize: 1
 
   TelegramWebhookFunction:
     Type: AWS::Serverless::Function
@@ -69,8 +105,11 @@ Outputs:
     Description: API Gateway endpoint URL for Telegram Webhook function
     Value: !Sub "https://://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/telegram-webhook/"
   DailySummaryFunctionArn:
-    Description: Daily Summary Lambda Function ARN
+    Description: ARN da função Lambda "Dispatcher" de Resumo Diário
     Value: !GetAtt DailySummaryFunction.Arn
-  DailySummaryFunctionIamRoleArn:
-    Description: Implicit IAM Role created for Daily Summary function
-    Value: !GetAtt DailySummaryFunctionRole.Arn
+  SummaryWorkerFunctionArn:
+    Description: ARN da função Lambda "Worker" de Resumo
+    Value: !GetAtt SummaryWorkerFunction.Arn
+  SummaryJobQueueUrl:
+    Description: URL da fila SQS para os trabalhos de resumo
+    Value: !Ref SummaryJobQueue
