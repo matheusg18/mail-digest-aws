@@ -1,0 +1,76 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  mail-digest-backend
+
+  Backend for the MailDigest application, containing a scheduled task for summaries and a webhook for Telegram.
+
+Globals:
+  Function:
+    Timeout: 30
+    Tracing: Active
+    LoggingConfig:
+      LogFormat: JSON
+    Tags:
+      Project: mail-digest
+      ManagedBy: SAM
+  Api:
+    TracingEnabled: true
+
+Resources:
+  DailySummaryFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Timeout: 300
+      CodeUri: src/
+      Handler: daily_summary_handler.lambda_handler
+      Runtime: python3.13
+      Architectures:
+        - x86_64
+      Events:
+        DailySummaryTrigger:
+          Type: Schedule
+          Properties:
+            Schedule: "cron(0 20 * * ? *)"
+            Name: MailDigest-DailyTrigger
+            Description: Triggers the daily email summary lambda
+
+  TelegramWebhookFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: telegram_webhook_handler.lambda_handler
+      Runtime: python3.13
+      Architectures:
+        - x86_64
+      Events:
+        TelegramWebhook:
+          Type: Api
+          Properties:
+            Path: /telegram-webhook
+            Method: post
+
+  ApplicationResourceGroup:
+    Type: AWS::ResourceGroups::Group
+    Properties:
+      Name:
+        Fn::Sub: ApplicationInsights-SAM-${AWS::StackName}
+      ResourceQuery:
+        Type: CLOUDFORMATION_STACK_1_0
+  ApplicationInsightsMonitoring:
+    Type: AWS::ApplicationInsights::Application
+    Properties:
+      ResourceGroupName:
+        Ref: ApplicationResourceGroup
+      AutoConfigurationEnabled: "true"
+
+Outputs:
+  TelegramWebhookApi:
+    Description: API Gateway endpoint URL for Telegram Webhook function
+    Value: !Sub "https://://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/telegram-webhook/"
+  DailySummaryFunctionArn:
+    Description: Daily Summary Lambda Function ARN
+    Value: !GetAtt DailySummaryFunction.Arn
+  DailySummaryFunctionIamRoleArn:
+    Description: Implicit IAM Role created for Daily Summary function
+    Value: !GetAtt DailySummaryFunctionRole.Arn
