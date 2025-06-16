@@ -1,42 +1,32 @@
 import json
+import asyncio
 
-# import requests
+from core.logger import L
+from services.telegram_service import deal_with_webhook_message
 
 
 def lambda_handler(event, context):
-    """Sample pure Lambda function
+    request_id = context.aws_request_id if context else "local"
+    logger = L(request_id)
+    logger.info("Telegram webhook handler invoked.")
 
-    Parameters
-    ----------
-    event: dict, required
-        API Gateway Lambda Proxy Input Format
+    try:
+        payload = json.loads(event.get("body", "{}"))
+        logger.info(f"Payload received: {payload}")
 
-        Event doc: https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-proxy-integrations.html#api-gateway-simple-proxy-for-lambda-input-format
+        asyncio.run(main_logic(payload, logger=logger))
 
-    context: object, required
-        Lambda Context runtime methods and attributes
+        return {"statusCode": 200, "body": json.dumps({"status": "ok"})}
+    except Exception as e:
+        logger.exception("Error processing webhook message", exc_info=e)
+        return {"statusCode": 200, "body": json.dumps({"status": "error"})}
 
-        Context doc: https://docs.aws.amazon.com/lambda/latest/dg/python-context-object.html
 
-    Returns
-    ------
-    API Gateway Lambda Proxy Output Format: dict
+async def main_logic(payload: dict, *, logger):
+    message = payload.get("message")
+    if not message:
+        logger.info("No message found in the payload. Ignoring.")
+        return
 
-        Return doc: https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-proxy-integrations.html
-    """
-
-    # try:
-    #     ip = requests.get("http://checkip.amazonaws.com/")
-    # except requests.RequestException as e:
-    #     # Send some context about this error to Lambda Logs
-    #     print(e)
-
-    #     raise e
-
-    return {
-        "statusCode": 200,
-        "body": json.dumps({
-            "message": "hello world",
-            # "location": ip.text.replace("\n", "")
-        }),
-    }
+    logger.info(f"Processing message: {message}")
+    await deal_with_webhook_message(message, logger=logger)
