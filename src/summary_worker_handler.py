@@ -1,72 +1,48 @@
 import json
+import asyncio
 
-
-def process_single_account(account_id):
-    """
-    É aqui que o trabalho pesado para uma única conta acontece.
-
-    - Busca as credenciais do banco usando o account_id.
-    - Conecta-se ao serviço de e-mail (ex: Gmail).
-    - Busca os e-mails.
-    - Obtém um resumo de um modelo de linguagem (ex: OpenAI).
-    - Formata o resumo.
-    - Envia o resumo via Telegram.
-    """
-    print(f"Iniciando processamento da conta com ID: {account_id}")
-
-    # Simulação da sua implementação real
-    try:
-        # 1. Busca detalhes da conta no BD
-        print(f"   - Buscando credenciais para {account_id} no Supabase...")
-
-        # 2. Conecta ao Gmail
-        print(f"   - Conectando ao serviço de e-mail para {account_id}...")
-
-        # 3. Chama a OpenAI
-        print(f"   - Gerando resumo com OpenAI para {account_id}...")
-
-        # 4. Envia via Telegram
-        print(f"   - Enviando resumo via Telegram para {account_id}...")
-
-        print(f"Conta processada com sucesso: {account_id}")
-        return True
-    except Exception as e:
-        print(f"Falha ao processar a conta {account_id}. Erro: {e}")
-        # A exceção fará com que a SQS tente reenviar a mensagem
-        raise e
+from core.logger import L
+from services.email_summary_service import generate_daily_email_summary
 
 
 def lambda_handler(event, context):
-    """
-    Esta função é o "Worker". Ela é acionada por uma ou mais mensagens
-    da fila SQS. Cada mensagem contém o ID de uma conta que precisa
-    ter seu resumo de e-mail processado.
-    """
-    print("Função Worker acionada.")
-    print(f"Evento recebido: {json.dumps(event)}")
+    request_id = context.aws_request_id if context else "local"
+    logger = L(request_id)
 
-    # Eventos da SQS contêm uma lista de 'Records'
+    logger.info("Starting execution of the worker function.")
+
+    return asyncio.run(main_logic(event, context, logger=logger))
+
+
+async def main_logic(event, context, *, logger):
+    logger.info(f"Received event: {json.dumps(event)}")
+    logger.info("Processing SQS event records...")
+
     for record in event.get("Records", []):
         try:
-            # O corpo da mensagem é uma string JSON, então precisamos parseá-la
             message_body = json.loads(record.get("body", "{}"))
-            account_id = message_body.get("accountId")
+            mail_account_id = message_body.get("mail_account_id")
 
-            if not account_id:
-                print("Pulando registro por falta de 'accountId' no corpo da mensagem.")
+            if not mail_account_id:
+                logger.warning(
+                    f"SQS message does not contain 'mail_account_id': {record.get('body')}"
+                )
                 continue
 
-            # Processa esta única conta
-            process_single_account(account_id)
+            await process_single_account(mail_account_id, logger=logger)
 
         except json.JSONDecodeError as e:
-            print(
-                f"Erro ao decodificar JSON do corpo da mensagem SQS: {record.get('body')}. Erro: {e}"
+            logger.exception(
+                f"Failed to decode JSON from SQS message body: {record.get('body')}. Error: {e}"
             )
         except Exception as e:
-            print(f"Ocorreu um erro inesperado ao processar um registro: {e}")
-            # Re-lançar a exceção é importante. Sinaliza para a Lambda e a SQS
-            # que o processamento desta mensagem falhou e deve ser tentado novamente ou enviado para a DLQ.
+            logger.exception(
+                f"An error occurred while processing SQS message: {record.get('body')}. Error: {e}"
+            )
             raise e
 
-    return {"statusCode": 200, "body": json.dumps("Processamento concluído.")}
+    return {"statusCode": 200, "body": json.dumps({"status": "ok"})}
+
+
+async def process_single_account(mail_account_id, *, logger):
+    await generate_daily_email_summary(mail_account_id, logger=logger)

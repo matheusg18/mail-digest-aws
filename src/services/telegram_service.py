@@ -36,7 +36,7 @@ async def handle_start_command(message: dict, *, logger):
     user = await user_service.get_user(user_id=user_id, logger=logger)
     if not user:
         logger.warning(f"User with ID {user_id} not found.")
-        await send_telegram_message(
+        await send_message(
             chat_id, "❌ Erro ao conectar com o Telegram. Usuário não encontrado."
         )
         return
@@ -49,15 +49,15 @@ async def handle_start_command(message: dict, *, logger):
             logger=logger,
         )
         logger.success(f"Telegram connected successfully for user: {user_id}")
-        await send_telegram_message(chat_id, "✅ Telegram conectado com sucesso!")
+        await send_message(chat_id, "✅ Telegram conectado com sucesso!")
     except Exception as e:
         logger.exception(f"Error connecting Telegram for user {user_id}: {e}")
-        await send_telegram_message(
+        await send_message(
             chat_id, "❌ Erro ao conectar com o Telegram. Tente novamente mais tarde."
         )
 
 
-async def send_telegram_message(chat_id: int, text: str) -> bool:
+async def send_message(chat_id: int, text: str) -> bool:
     async with httpx.AsyncClient() as client:
         response = await client.post(
             f"{TELEGRAM_API_URL}/sendMessage",

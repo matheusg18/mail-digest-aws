@@ -3,7 +3,7 @@
     {
       "messageId": "19dd0b57-b21e-4ac1-bd88-01bbb068cb78",
       "receiptHandle": "MessageReceiptHandle",
-      "body": "{\"accountId\": \"uuid-da-conta-para-testar\"}",
+      "body": "{\"mail_account_id\": \"a28d4835-4a3c-4c7c-8cac-0711c960f07c\"}",
       "awsRegion": "sa-east-1"
     }
   ]
