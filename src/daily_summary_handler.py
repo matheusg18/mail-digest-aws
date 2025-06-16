@@ -16,7 +16,7 @@ async def get_active_mail_accounts_from_db(*, logger):
     try:
         response = (
             await supabase.table("mail_accounts")
-            .select("user_id")
+            .select("id")
             .eq("is_active", True)
             .execute()
         )
@@ -51,18 +51,24 @@ async def main_logic(event, context, *, logger):
     failure_count = 0
 
     for mail_account in active_mail_accounts:
-        user_id = mail_account.get("user_id")
-        if not user_id:
-            logger.info(f"Skipping mail account with missing user_id: {mail_account}")
+        mail_account_id = mail_account.get("id")
+        if not mail_account_id:
+            logger.info(
+                f"Skipping mail account with missing id: {mail_account}"
+            )
             failure_count += 1
             continue
         try:
-            message_body = json.dumps({"user_id": user_id})
+            message_body = json.dumps({"mail_account_id": mail_account_id})
             sqs.send_message(QueueUrl=SQS_QUEUE_URL, MessageBody=message_body)
-            logger.success(f"Message sent to SQS for user_id: {user_id}")
+            logger.success(
+                f"Message sent to SQS for mail_account_id: {mail_account_id}"
+            )
             success_count += 1
         except Exception as e:
-            logger.exception(f"Failed to send message for user_id {user_id}: {e}")
+            logger.exception(
+                f"Failed to send message for mail_account_id {mail_account_id}: {e}"
+            )
             failure_count += 1
 
     logger.success(
