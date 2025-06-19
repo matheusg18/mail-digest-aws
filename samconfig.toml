@@ -38,7 +38,7 @@ warm_containers = "EAGER"
 [dev.deploy.parameters]
 stack_name = "mail-digest-lambda-dev"
 parameter_overrides = ["Environment=dev"]
-resolve_s3 = true
+s3_bucket = "mail-digest-artifacts-012985018244-sa-east-1"
 s3_prefix = "mail-digest-lambda-dev"
 region = "sa-east-1"
 capabilities = "CAPABILITY_IAM"
@@ -48,7 +48,7 @@ capabilities = "CAPABILITY_IAM"
 [prod.deploy.parameters]
 stack_name = "mail-digest-lambda-prod"
 parameter_overrides = ["Environment=prod"]
-resolve_s3 = true
+s3_bucket = "mail-digest-artifacts-012985018244-sa-east-1"
 s3_prefix = "mail-digest-lambda-prod"
 region = "sa-east-1"
 capabilities = "CAPABILITY_IAM"
