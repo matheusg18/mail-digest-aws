@@ -5,7 +5,6 @@ from pydantic import SecretStr
 
 from core.settings import settings
 
-
 llm = ChatOpenAI(
     model="gpt-4.1-mini",
     max_completion_tokens=3000,

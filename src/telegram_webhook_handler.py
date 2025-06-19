@@ -1,5 +1,5 @@
-import json
 import asyncio
+import json
 
 from core.logger import L
 from services.telegram_service import deal_with_webhook_message

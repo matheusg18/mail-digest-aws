@@ -1,6 +1,6 @@
 import json
-from typing import List
 import uuid
+from typing import List
 
 from langchain.schema import Document
 
@@ -9,8 +9,11 @@ from chains import (
     summarize_email_chain,
 )
 from loaders.gmail_loader import GmailLoader
-from services import google_auth_service, telegram_service
-from services import mail_account_service
+from services import (
+    google_auth_service,
+    mail_account_service,
+    telegram_service,
+)
 from services.delivery_channel_service import get_active_delivery_channels
 
 

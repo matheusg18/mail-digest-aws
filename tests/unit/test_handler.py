@@ -1,11 +1,10 @@
 import json
 
 import pytest
-
 from hello_world import app
 
 
-@pytest.fixture()
+@pytest.fixture
 def apigw_event():
     """ Generates API GW Event"""
 

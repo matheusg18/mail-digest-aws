@@ -1,4 +1,5 @@
 import uuid
+
 from core.supabase_client import create_supabase_client
 from domain.mail_account import MailAccount
 

@@ -1,7 +1,8 @@
+import asyncio
 import json
 import os
+
 import boto3
-import asyncio
 
 from core.logger import L
 from core.supabase_client import create_supabase_client

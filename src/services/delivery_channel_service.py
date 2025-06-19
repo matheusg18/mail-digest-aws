@@ -1,5 +1,6 @@
-from typing import List
 import uuid
+from typing import List
+
 from core.supabase_client import create_supabase_client
 from domain.delivery_channel import DeliveryChannel
 
@@ -9,7 +10,9 @@ async def get_active_delivery_channels(
 ) -> List[DeliveryChannel]:
     supabase = await create_supabase_client()
     try:
-        logger.info(f"Fetching active delivery channels for user ID: {user_id}")
+        logger.info(
+            f"Fetching active delivery channels for user ID: {user_id}"
+        )
         response = (
             await supabase.table("delivery_channels")
             .select("*")

@@ -3,8 +3,8 @@ from http import HTTPStatus
 import httpx
 
 from core.settings import settings
-from services import user_service
 from domain.delivery_channel import DeliveryChannelEnum
+from services import user_service
 
 TELEGRAM_API_URL = f"https://api.telegram.org/bot{settings.TELEGRAM_BOT_TOKEN}"
 

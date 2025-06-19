@@ -1,5 +1,6 @@
 import json
 import uuid
+
 from core.supabase_client import create_supabase_client
 from domain.delivery_channel import DeliveryChannel, DeliveryChannelEnum
 from domain.user import User

@@ -1,5 +1,5 @@
-import json
 import asyncio
+import json
 
 from core.logger import L
 from services.email_summary_service import generate_daily_email_summary
