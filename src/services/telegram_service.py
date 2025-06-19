@@ -1,7 +1,6 @@
 from http import HTTPStatus
 
 import httpx
-from loguru import Logger
 
 from core.settings import settings
 from domain.delivery_channel import DeliveryChannelEnum
@@ -11,7 +10,7 @@ TELEGRAM_API_URL = f"https://api.telegram.org/bot{settings.TELEGRAM_BOT_TOKEN}"
 START_COMMAND_PARTS = 2
 
 
-async def deal_with_webhook_message(message: dict, *, logger: Logger) -> None:
+async def deal_with_webhook_message(message: dict, *, logger) -> None:
     text = message.get("text", "")
     chat_id = message.get("chat", {}).get("id")
 
@@ -23,7 +22,7 @@ async def deal_with_webhook_message(message: dict, *, logger: Logger) -> None:
         await handle_start_command(message, logger=logger)
 
 
-async def handle_start_command(message: dict, *, logger: Logger) -> None:
+async def handle_start_command(message: dict, *, logger) -> None:
     text = message.get("text", "")
     chat_id = message.get("chat", {}).get("id")
 

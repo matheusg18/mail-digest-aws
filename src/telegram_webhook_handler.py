@@ -1,8 +1,6 @@
 import asyncio
 import json
 
-from loguru import Logger
-
 from core.logger import L
 from core.settings import settings
 from services.telegram_service import deal_with_webhook_message
@@ -44,7 +42,7 @@ def validate_secret_token(secret_token: str) -> bool:
     return secret_token == settings.TELEGRAM_WEBHOOK_SECRET_TOKEN
 
 
-async def main_logic(payload: dict, *, logger: Logger) -> None:
+async def main_logic(payload: dict, *, logger) -> None:
     message = payload.get("message")
     if not message:
         logger.info("No message found in the payload. Ignoring.")
