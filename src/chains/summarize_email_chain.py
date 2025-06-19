@@ -26,12 +26,10 @@ human_prompt_template = HumanMessagePromptTemplate.from_template(
     "Return a JSON object and use the same language as the email content."
 )
 
-email_summary_prompt_template = ChatPromptTemplate.from_messages(
-    [
-        system_prompt,
-        human_prompt_template,
-    ]
-)
+email_summary_prompt_template = ChatPromptTemplate.from_messages([
+    system_prompt,
+    human_prompt_template,
+])
 
 structured_llm = llm.with_structured_output(EmailSummarySchema)
 

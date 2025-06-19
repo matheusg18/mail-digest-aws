@@ -33,11 +33,9 @@ human_prompt_template = HumanMessagePromptTemplate.from_template(
     "- [Approvals, changes in direction, etc.]"
 )
 
-aggregated_summary_prompt_template = ChatPromptTemplate.from_messages(
-    [
-        system_prompt,
-        human_prompt_template,
-    ]
-)
+aggregated_summary_prompt_template = ChatPromptTemplate.from_messages([
+    system_prompt,
+    human_prompt_template,
+])
 
 chain = aggregated_summary_prompt_template | llm
