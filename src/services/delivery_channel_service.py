@@ -22,7 +22,9 @@ async def get_active_delivery_channels(
         )
 
         if not response.data:
-            logger.warning(f"No active delivery channels found for user ID {user_id}.")
+            logger.warning(
+                f"No active delivery channels found for user ID {user_id}."
+            )
             return []
 
         logger.success(f"Active delivery channels found: {response.data}")

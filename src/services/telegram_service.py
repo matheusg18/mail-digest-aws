@@ -7,6 +7,7 @@ from domain.delivery_channel import DeliveryChannelEnum
 from services import user_service
 
 TELEGRAM_API_URL = f"https://api.telegram.org/bot{settings.TELEGRAM_BOT_TOKEN}"
+START_COMMAND_PARTS = 2
 
 
 async def deal_with_webhook_message(message: dict, *, logger):
@@ -26,7 +27,7 @@ async def handle_start_command(message: dict, *, logger):
     chat_id = message.get("chat", {}).get("id")
 
     parts = text.split()
-    if len(parts) != 2:
+    if len(parts) != START_COMMAND_PARTS:
         logger.warning(f"Malformed /start command received: {text}")
         return
 
@@ -37,7 +38,8 @@ async def handle_start_command(message: dict, *, logger):
     if not user:
         logger.warning(f"User with ID {user_id} not found.")
         await send_message(
-            chat_id, "❌ Erro ao conectar com o Telegram. Usuário não encontrado."
+            chat_id,
+            "❌ Erro ao conectar com o Telegram. Usuário não encontrado.",
         )
         return
 
@@ -53,7 +55,8 @@ async def handle_start_command(message: dict, *, logger):
     except Exception as e:
         logger.exception(f"Error connecting Telegram for user {user_id}: {e}")
         await send_message(
-            chat_id, "❌ Erro ao conectar com o Telegram. Tente novamente mais tarde."
+            chat_id,
+            "❌ Erro ao conectar com o Telegram. Tente novamente mais tarde.",
         )
 
 

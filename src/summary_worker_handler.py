@@ -25,7 +25,8 @@ async def main_logic(event, context, *, logger):
 
             if not mail_account_id:
                 logger.warning(
-                    f"SQS message does not contain 'mail_account_id': {record.get('body')}"
+                    "SQS message does not contain 'mail_account_id': "
+                    f"{record.get('body')}"
                 )
                 continue
 
@@ -33,11 +34,13 @@ async def main_logic(event, context, *, logger):
 
         except json.JSONDecodeError as e:
             logger.exception(
-                f"Failed to decode JSON from SQS message body: {record.get('body')}. Error: {e}"
+                "Failed to decode JSON from SQS message body: "
+                f"{record.get('body')}. Error: {e}"
             )
         except Exception as e:
             logger.exception(
-                f"An error occurred while processing SQS message: {record.get('body')}. Error: {e}"
+                "An error occurred while processing SQS message: "
+                f"{record.get('body')}. Error: {e}"
             )
             raise e
 

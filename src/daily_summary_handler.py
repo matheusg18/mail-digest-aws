@@ -23,7 +23,9 @@ async def get_active_mail_accounts_from_db(*, logger):
         )
         active_mail_accounts = response.data
 
-        logger.success(f"{len(active_mail_accounts)} mail active accounts found.")
+        logger.success(
+            f"{len(active_mail_accounts)} mail active accounts found."
+        )
         return active_mail_accounts
     except Exception as e:
         logger.exception(f"Error fetching active mail accounts: {e}")
@@ -33,21 +35,26 @@ async def get_active_mail_accounts_from_db(*, logger):
 async def main_logic(event, context, *, logger):
     if not SQS_QUEUE_URL:
         raise EnvironmentError(
-            "SQS_QUEUE_URL environment variable is not set. Please configure it."
+            "SQS_QUEUE_URL environment variable is not set. "
+            "Please configure it."
         )
 
-    active_mail_accounts = await get_active_mail_accounts_from_db(logger=logger)
+    active_mail_accounts = await get_active_mail_accounts_from_db(
+        logger=logger
+    )
 
     if not active_mail_accounts:
         logger.info("No active mail accounts found to process.")
         return {
             "statusCode": 200,
-            "body": json.dumps(
-                {"message": "No active mail accounts found to process."}
-            ),
+            "body": json.dumps({
+                "message": "No active mail accounts found to process."
+            }),
         }
 
-    logger.info(f"Found {len(active_mail_accounts)} active mail accounts to process.")
+    logger.info(
+        f"Found {len(active_mail_accounts)} active mail accounts to process."
+    )
     success_count = 0
     failure_count = 0
 
@@ -68,23 +75,23 @@ async def main_logic(event, context, *, logger):
             success_count += 1
         except Exception as e:
             logger.exception(
-                f"Failed to send message for mail_account_id {mail_account_id}: {e}"
+                f"Failed to send message for mail_account_id {mail_account_id}"
+                f": {e}"
             )
             failure_count += 1
 
     logger.success(
-        f"Process completed: {success_count} successful, {failure_count} failed."
+        f"Process completed: {success_count} successful, "
+        f"{failure_count} failed."
     )
     return {
         "statusCode": 200,
-        "body": json.dumps(
-            {
-                "message": "Process completed.",
-                "total_accounts": len(active_mail_accounts),
-                "success_count": success_count,
-                "failure_count": failure_count,
-            }
-        ),
+        "body": json.dumps({
+            "message": "Process completed.",
+            "total_accounts": len(active_mail_accounts),
+            "success_count": success_count,
+            "failure_count": failure_count,
+        }),
     }
 
 

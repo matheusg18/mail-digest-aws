@@ -7,7 +7,9 @@ from core.settings import settings
 GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
 
 
-async def get_access_token(mail_account_credentials: Dict[str, Any], *, logger) -> str:
+async def get_access_token(
+    mail_account_credentials: Dict[str, Any], *, logger
+) -> str:
     if not mail_account_credentials.get("refresh_token"):
         logger.warning("No refresh token found in mail account credentials.")
         raise ValueError("No refresh token found in mail account credentials.")

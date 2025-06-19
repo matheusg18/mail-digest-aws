@@ -11,7 +11,10 @@ async def get_user(user_id: uuid.UUID, *, logger) -> User | None:
     try:
         logger.info(f"Fetching user with ID: {user_id}")
         response = (
-            await supabase.table("users").select("*").eq("id", str(user_id)).execute()
+            await supabase.table("users")
+            .select("*")
+            .eq("id", str(user_id))
+            .execute()
         )
 
         if not response.data:
@@ -42,14 +45,18 @@ async def add_delivery_channel(
             is_active=is_active,
         )
 
-        logger.info(f"Adding delivery channel: {delivery_channel.model_dump()}")
+        logger.info(
+            f"Adding delivery channel: {delivery_channel.model_dump()}"
+        )
         response = (
             await supabase.table("delivery_channels")
             .insert(json.loads(delivery_channel.model_dump_json()))
             .execute()
         )
 
-        logger.success(f"Delivery channel added successfully: {response.data[0]}")
+        logger.success(
+            f"Delivery channel added successfully: {response.data[0]}"
+        )
         return DeliveryChannel(**response.data[0])
     except Exception as e:
         logger.error(f"Error adding delivery channel: {e}")

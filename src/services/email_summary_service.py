@@ -17,7 +17,9 @@ from services import (
 from services.delivery_channel_service import get_active_delivery_channels
 
 
-async def generate_daily_email_summary(mail_account_id: uuid.UUID, *, logger) -> None:
+async def generate_daily_email_summary(
+    mail_account_id: uuid.UUID, *, logger
+) -> None:
     mail_account = await mail_account_service.get_mail_account(
         mail_account_id, logger=logger
     )
@@ -26,7 +28,7 @@ async def generate_daily_email_summary(mail_account_id: uuid.UUID, *, logger) ->
 
     if not mail_account.credentials:
         raise ValueError(
-            f"Mail account with ID {mail_account_id} does not have credentials."
+            f"Mail account with ID {mail_account_id} does not have credentials"
         )
 
     gmail_loader = GmailLoader(
@@ -39,7 +41,9 @@ async def generate_daily_email_summary(mail_account_id: uuid.UUID, *, logger) ->
 
     if not documents:
         logger.warning("No emails found for today.")
-        raise ValueError("No emails found for today. Please check your Gmail settings.")
+        raise ValueError(
+            "No emails found for today. Please check your Gmail settings."
+        )
 
     logger.info(f"Found {len(documents)} emails to summarize.")
     summaries = await _batch_summarize_emails(documents, logger=logger)
@@ -62,10 +66,12 @@ async def generate_daily_email_summary(mail_account_id: uuid.UUID, *, logger) ->
 
     if not telegram_delivery_channel:
         raise ValueError(
-            "No active Telegram delivery channel found for the user. Please add a delivery channel."
+            "No active Telegram delivery channel found for the user. "
+            "Please add a delivery channel."
         )
     logger.info(
-        f"Sending aggregated summary to Telegram channel: {telegram_delivery_channel.address}"
+        "Sending aggregated summary to Telegram channel: "
+        f"{telegram_delivery_channel.address}"
     )
     await telegram_service.send_message(
         int(telegram_delivery_channel.address),

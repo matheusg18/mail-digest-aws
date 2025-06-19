@@ -28,6 +28,7 @@ freezegun = "^1.5.2"
 
 [tool.ruff]
 line-length = 79
+exclude = ["tests/"]
 
 [tool.ruff.lint]
 preview = true
