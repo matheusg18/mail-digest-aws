@@ -24,6 +24,9 @@ def fetch_secrets_from_ssm() -> dict:
         "GOOGLE_CLIENT_ID": os.getenv("GOOGLE_CLIENT_ID_SSM_NAME"),
         "GOOGLE_CLIENT_SECRET": os.getenv("GOOGLE_CLIENT_SECRET_SSM_NAME"),
         "TELEGRAM_BOT_TOKEN": os.getenv("TELEGRAM_BOT_TOKEN_SSM_NAME"),
+        "TELEGRAM_WEBHOOK_SECRET_TOKEN": os.getenv(
+            "TELEGRAM_WEBHOOK_SECRET_TOKEN_SSM_NAME"
+        ),
         "LANGSMITH_TRACING": os.getenv("LANGSMITH_TRACING_SSM_NAME"),
         "LANGCHAIN_TRACING_ENDPOINT": os.getenv(
             "LANGCHAIN_TRACING_ENDPOINT_SSM_NAME"
@@ -72,6 +75,9 @@ class Settings(BaseSettings):
     SUPABASE_SERVICE_KEY: str = _aws_secrets.get("SUPABASE_SERVICE_KEY", "")
     OPENAI_API_KEY: str = _aws_secrets.get("OPENAI_API_KEY", "")
     TELEGRAM_BOT_TOKEN: str = _aws_secrets.get("TELEGRAM_BOT_TOKEN", "")
+    TELEGRAM_WEBHOOK_SECRET_TOKEN: str = _aws_secrets.get(
+        "TELEGRAM_WEBHOOK_SECRET_TOKEN", ""
+    )
     GOOGLE_CLIENT_ID: str = _aws_secrets.get("GOOGLE_CLIENT_ID", "")
     GOOGLE_CLIENT_SECRET: str = _aws_secrets.get("GOOGLE_CLIENT_SECRET", "")
     LANGSMITH_TRACING: bool = (

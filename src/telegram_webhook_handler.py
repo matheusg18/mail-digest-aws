@@ -1,6 +1,8 @@
 import asyncio
 import json
 
+from loguru import Logger
+
 from core.logger import L
 from services.telegram_service import deal_with_webhook_message
 
@@ -12,8 +14,6 @@ def lambda_handler(event, context):
 
     try:
         payload = json.loads(event.get("body", "{}"))
-        logger.info(f"Payload received: {payload}")
-
         asyncio.run(main_logic(payload, logger=logger))
 
         return {"statusCode": 200, "body": json.dumps({"status": "ok"})}
@@ -22,7 +22,7 @@ def lambda_handler(event, context):
         return {"statusCode": 200, "body": json.dumps({"status": "error"})}
 
 
-async def main_logic(payload: dict, *, logger):
+async def main_logic(payload: dict, *, logger: Logger):
     message = payload.get("message")
     if not message:
         logger.info("No message found in the payload. Ignoring.")
