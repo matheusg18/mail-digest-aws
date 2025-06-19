@@ -4,6 +4,7 @@ import json
 from loguru import Logger
 
 from core.logger import L
+from core.settings import settings
 from services.telegram_service import deal_with_webhook_message
 
 
@@ -13,6 +14,20 @@ def lambda_handler(event, context):
     logger.info("Telegram webhook handler invoked.")
 
     try:
+        secret_token = event.get("headers", {}).get(
+            "X-Telegram-Bot-Api-Secret-Token"
+        )
+
+        if not validate_secret_token(secret_token):
+            logger.warning("Invalid secret token.")
+            return {
+                "statusCode": 403,
+                "body": json.dumps({
+                    "status": "error",
+                    "message": "Forbidden",
+                }),
+            }
+
         payload = json.loads(event.get("body", "{}"))
         asyncio.run(main_logic(payload, logger=logger))
 
@@ -22,7 +37,14 @@ def lambda_handler(event, context):
         return {"statusCode": 200, "body": json.dumps({"status": "error"})}
 
 
-async def main_logic(payload: dict, *, logger: Logger):
+def validate_secret_token(secret_token: str) -> bool:
+    if not secret_token:
+        return False
+
+    return secret_token == settings.TELEGRAM_WEBHOOK_SECRET_TOKEN
+
+
+async def main_logic(payload: dict, *, logger: Logger) -> None:
     message = payload.get("message")
     if not message:
         logger.info("No message found in the payload. Ignoring.")
