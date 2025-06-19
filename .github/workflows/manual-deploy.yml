@@ -76,9 +76,3 @@ jobs:
             --stack-name mail-digest-lambda-${{ github.event.inputs.environment }} \
             --query 'Stacks[0].Outputs' \
             --output table
-
-      - name: Run smoke tests
-        run: |
-          # Add basic smoke tests here
-          echo "Running smoke tests for ${{ github.event.inputs.environment }} environment"
-          # Example: Test API endpoints, check Lambda functions are responding, etc.
