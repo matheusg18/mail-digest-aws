@@ -12,6 +12,7 @@ def lambda_handler(event, context):
     logger.info("Telegram webhook handler invoked.")
 
     try:
+        logger.info(f"Received event: {json.dumps(event, indent=2)}")
         secret_token = event.get("headers", {}).get(
             "X-Telegram-Bot-Api-Secret-Token"
         )
