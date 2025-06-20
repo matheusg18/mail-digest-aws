@@ -17,7 +17,7 @@ def lambda_handler(event, context):
             "X-Telegram-Bot-Api-Secret-Token"
         )
 
-        if not validate_secret_token(secret_token):
+        if not validate_secret_token(secret_token, logger=logger):
             logger.warning("Invalid secret token.")
             return {
                 "statusCode": 403,
@@ -36,7 +36,8 @@ def lambda_handler(event, context):
         return {"statusCode": 200, "body": json.dumps({"status": "error"})}
 
 
-def validate_secret_token(secret_token: str) -> bool:
+def validate_secret_token(secret_token: str, logger) -> bool:
+    logger.info("Validating secret token.", extra={"secret_token": secret_token, "expected_token": settings.TELEGRAM_WEBHOOK_SECRET_TOKEN})
     if not secret_token:
         return False
 
