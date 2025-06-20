@@ -33,7 +33,7 @@ Globals:
         GOOGLE_CLIENT_ID_SSM_NAME: !Sub "/mail-digest/${Environment}/google-client-id"
         GOOGLE_CLIENT_SECRET_SSM_NAME: !Sub "/mail-digest/${Environment}/google-client-secret"
         TELEGRAM_BOT_TOKEN_SSM_NAME: !Sub "/mail-digest/${Environment}/telegram-bot-token"
-        TELEGRAM_WEBHOOK_SECRET_TOKEN: !Sub "/mail-digest/${Environment}/telegram-webhook-secret-token"
+        TELEGRAM_WEBHOOK_SECRET_TOKEN_SSM_NAME: !Sub "/mail-digest/${Environment}/telegram-webhook-secret-token"
         LANGSMITH_TRACING_SSM_NAME: !Sub "/mail-digest/${Environment}/langsmith-tracing"
         LANGSMITH_ENDPOINT_SSM_NAME: !Sub "/mail-digest/${Environment}/langsmith-endpoint"
         LANGSMITH_API_KEY_SSM_NAME: !Sub "/mail-digest/${Environment}/langsmith-api-key"
