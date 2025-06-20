@@ -59,6 +59,9 @@ jobs:
       - name: Setup SAM CLI
         uses: aws-actions/setup-sam@v2
 
+      - name: Export requirements.txt from Poetry
+        run: poetry export -f requirements.txt --output src/requirements.txt --without-hashes
+
       - name: Build SAM application
         run: sam build --use-container
 
