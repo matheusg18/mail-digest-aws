@@ -12,6 +12,7 @@ dependencies = [
     "beautifulsoup4 (>=4.13.4,<5.0.0)",
     "loguru (>=0.7.3,<0.8.0)",
     "boto3 (>=1.38.39,<2.0.0)",
+    "supabase (>=2.15.3,<3.0.0)",
 ]
 
 [tool.poetry]
