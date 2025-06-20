@@ -12,7 +12,6 @@ def lambda_handler(event, context):
     logger.info("Telegram webhook handler invoked.")
 
     try:
-        logger.info(f"Received event: {json.dumps(event, indent=2)}")
         secret_token = event.get("headers", {}).get(
             "X-Telegram-Bot-Api-Secret-Token"
         )
@@ -37,7 +36,6 @@ def lambda_handler(event, context):
 
 
 def validate_secret_token(secret_token: str, logger) -> bool:
-    logger.info("Validating secret token.", extra={"secret_token": secret_token, "expected_token": settings.TELEGRAM_WEBHOOK_SECRET_TOKEN})
     if not secret_token:
         return False
 
