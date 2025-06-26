@@ -38,6 +38,7 @@ Globals:
         LANGSMITH_ENDPOINT_SSM_NAME: !Sub "/mail-digest/${Environment}/langsmith-endpoint"
         LANGSMITH_API_KEY_SSM_NAME: !Sub "/mail-digest/${Environment}/langsmith-api-key"
         LANGSMITH_PROJECT_SSM_NAME: !Sub "/mail-digest/${Environment}/langsmith-project"
+        TOKEN_ENCRYPTION_KEY_SSM_NAME: !Sub "/mail-digest/${Environment}/token-encryption-key"
   Api:
     TracingEnabled: true
 

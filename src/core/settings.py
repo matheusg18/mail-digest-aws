@@ -37,6 +37,7 @@ def fetch_secrets_from_ssm() -> dict:
         "LANGCHAIN_TRACING_PROJECT": os.getenv(
             "LANGCHAIN_TRACING_PROJECT_SSM_NAME"
         ),
+        "TOKEN_ENCRYPTION_KEY": os.getenv("TOKEN_ENCRYPTION_KEY_SSM_NAME"),
     }
 
     ssm_param_names_to_fetch = [
@@ -92,6 +93,7 @@ class Settings(BaseSettings):
     LANGCHAIN_TRACING_PROJECT: str = _aws_secrets.get(
         "LANGCHAIN_TRACING_PROJECT", ""
     )
+    TOKEN_ENCRYPTION_KEY: str = _aws_secrets.get("TOKEN_ENCRYPTION_KEY", "")
 
 
 settings = Settings()  # type: ignore

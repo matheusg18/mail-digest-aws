@@ -6,7 +6,7 @@ from typing import Any, Dict, Optional
 from pydantic import BaseModel, ConfigDict, Field
 
 
-class EmailServiceEnum(Enum):
+class EmailProviderEnum(Enum):
     GMAIL = "GMAIL"
     OUTLOOK = "OUTLOOK"
 
@@ -22,8 +22,8 @@ class MailAccount(BaseModel):
         default_factory=lambda: datetime.now(timezone.utc)
     )
     user_id: uuid.UUID
-    service_type: EmailServiceEnum
-    account_email: str
+    provider: EmailProviderEnum
+    email_address: str
     credentials: Optional[Dict[str, Any]] = None
     is_active: bool = True
 

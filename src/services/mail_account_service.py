@@ -2,6 +2,7 @@ import uuid
 
 from core.supabase_client import create_supabase_client
 from domain.mail_account import MailAccount
+from utils.security.crypto import decrypt_token
 
 
 async def get_mail_account(
@@ -24,7 +25,16 @@ async def get_mail_account(
             return None
 
         logger.success(f"Mail account found: {response.data[0]}")
-        return MailAccount(**response.data[0])
+
+        mail_account = MailAccount(**response.data[0])
+        if mail_account.credentials:
+            if mail_account.credentials.get("refresh_token"):
+                decrypted_token = decrypt_token(
+                    mail_account.credentials["refresh_token"]
+                )
+                mail_account.credentials["refresh_token"] = decrypted_token
+
+        return mail_account
     except Exception as e:
         logger.error(f"Error fetching mail account: {e}")
         raise Exception(f"Error fetching mail account: {e}") from e
