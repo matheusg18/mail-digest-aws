@@ -155,16 +155,40 @@ resource "google_storage_bucket" "functions_source_bucket" {
   uniform_bucket_level_access = true
 }
 
-data "archive_file" "source_zip" {
+data "archive_file" "dispatcher_zip" {
   type        = "zip"
-  source_dir  = "${path.module}/../../src"
-  output_path = "${path.module}/source.zip"
+  source_dir  = "${path.module}/../../build/dispatcher"
+  output_path = "${path.module}/dispatcher.zip"
 }
 
-resource "google_storage_bucket_object" "source_archive" {
-  name   = "source-${data.archive_file.source_zip.output_md5}.zip"
+data "archive_file" "worker_zip" {
+  type        = "zip"
+  source_dir  = "${path.module}/../../build/worker"
+  output_path = "${path.module}/worker.zip"
+}
+
+data "archive_file" "webhook_zip" {
+  type        = "zip"
+  source_dir  = "${path.module}/../../build/webhook"
+  output_path = "${path.module}/webhook.zip"
+}
+
+resource "google_storage_bucket_object" "dispatcher_archive" {
+  name   = "dispatcher-${data.archive_file.dispatcher_zip.output_md5}.zip"
   bucket = google_storage_bucket.functions_source_bucket.name
-  source = data.archive_file.source_zip.output_path
+  source = data.archive_file.dispatcher_zip.output_path
+}
+
+resource "google_storage_bucket_object" "worker_archive" {
+  name   = "worker-${data.archive_file.worker_zip.output_md5}.zip"
+  bucket = google_storage_bucket.functions_source_bucket.name
+  source = data.archive_file.worker_zip.output_path
+}
+
+resource "google_storage_bucket_object" "webhook_archive" {
+  name   = "webhook-${data.archive_file.webhook_zip.output_md5}.zip"
+  bucket = google_storage_bucket.functions_source_bucket.name
+  source = data.archive_file.webhook_zip.output_path
 }
 
 # ==============================================================================
@@ -184,7 +208,7 @@ resource "google_cloudfunctions2_function" "summary_dispatcher_function" {
     source {
       storage_source {
         bucket = google_storage_bucket.functions_source_bucket.name
-        object = google_storage_bucket_object.source_archive.name
+        object = google_storage_bucket_object.dispatcher_archive.name
       }
     }
   }
@@ -232,7 +256,7 @@ resource "google_cloudfunctions2_function" "summary_worker_function" {
     source {
       storage_source {
         bucket = google_storage_bucket.functions_source_bucket.name
-        object = google_storage_bucket_object.source_archive.name
+        object = google_storage_bucket_object.worker_archive.name
       }
     }
   }
@@ -314,7 +338,7 @@ resource "google_cloudfunctions2_function" "telegram_webhook_function" {
     source {
       storage_source {
         bucket = google_storage_bucket.functions_source_bucket.name
-        object = google_storage_bucket_object.source_archive.name
+        object = google_storage_bucket_object.webhook_archive.name
       }
     }
   }
