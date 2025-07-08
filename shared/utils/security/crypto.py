@@ -2,7 +2,7 @@ import base64
 
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
-from core.settings import settings
+from shared.core.settings import settings
 
 IV_LENGTH = 12
 AUTH_TAG_LENGTH = 16

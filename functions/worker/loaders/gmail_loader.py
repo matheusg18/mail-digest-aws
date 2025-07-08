@@ -6,7 +6,7 @@ from bs4 import BeautifulSoup
 from langchain.document_loaders.base import BaseLoader
 from langchain.schema import Document
 
-from services import gmail_service
+from shared.services import gmail_service
 
 
 class GmailLoader(BaseLoader):

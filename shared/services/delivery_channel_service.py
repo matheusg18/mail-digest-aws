@@ -1,8 +1,8 @@
 import uuid
 from typing import List
 
-from core.supabase_client import create_supabase_client
-from domain.delivery_channel import DeliveryChannel
+from shared.core.supabase_client import create_supabase_client
+from shared.domain.delivery_channel import DeliveryChannel
 
 
 async def get_active_delivery_channels(

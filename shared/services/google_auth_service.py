@@ -2,7 +2,7 @@ from typing import Any, Dict
 
 import httpx
 
-from core.settings import settings
+from shared.core.settings import settings
 
 GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
 

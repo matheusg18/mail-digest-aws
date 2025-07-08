@@ -2,9 +2,9 @@ from http import HTTPStatus
 
 import httpx
 
-from core.settings import settings
-from domain.delivery_channel import DeliveryChannelEnum
-from services import user_service
+from shared.core.settings import settings
+from shared.domain.delivery_channel import DeliveryChannelEnum
+from shared.services import user_service
 
 TELEGRAM_API_URL = f"https://api.telegram.org/bot{settings.TELEGRAM_BOT_TOKEN}"
 START_COMMAND_PARTS = 2

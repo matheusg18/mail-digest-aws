@@ -47,6 +47,7 @@ override.tf.json
 *_override.tf.json
 crash.log
 crash.*.log
+infra/**/*.zip
 
 # Poetry
 .poetry/

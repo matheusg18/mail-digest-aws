@@ -3,8 +3,8 @@ from langchain_core.messages import SystemMessage
 from langchain_openai import ChatOpenAI
 from pydantic import SecretStr
 
-from core.settings import settings
-from schemas.email_summary_schema import EmailSummarySchema
+from functions.worker.schemas.email_summary_schema import EmailSummarySchema
+from shared.core.settings import settings
 
 llm = ChatOpenAI(
     model="gpt-4.1-nano",

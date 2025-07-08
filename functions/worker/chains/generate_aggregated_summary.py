@@ -3,7 +3,7 @@ from langchain_core.messages import SystemMessage
 from langchain_openai import ChatOpenAI
 from pydantic import SecretStr
 
-from core.settings import settings
+from shared.core.settings import settings
 
 llm = ChatOpenAI(
     model="gpt-4.1-mini",

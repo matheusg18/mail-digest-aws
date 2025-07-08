@@ -4,17 +4,19 @@ from typing import List
 
 from langchain.schema import Document
 
-from chains import (
+from functions.worker.chains import (
     generate_aggregated_summary,
     summarize_email_chain,
 )
-from loaders.gmail_loader import GmailLoader
-from services import (
+from functions.worker.loaders.gmail_loader import GmailLoader
+from shared.services import (
     google_auth_service,
     mail_account_service,
     telegram_service,
 )
-from services.delivery_channel_service import get_active_delivery_channels
+from shared.services.delivery_channel_service import (
+    get_active_delivery_channels,
+)
 
 
 async def generate_daily_email_summary(

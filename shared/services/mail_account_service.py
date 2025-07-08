@@ -1,8 +1,8 @@
 import uuid
 
-from core.supabase_client import create_supabase_client
-from domain.mail_account import MailAccount
-from utils.security.crypto import decrypt_token
+from shared.core.supabase_client import create_supabase_client
+from shared.domain.mail_account import MailAccount
+from shared.utils.security.crypto import decrypt_token
 
 
 async def get_mail_account(

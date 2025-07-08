@@ -1,6 +1,6 @@
 from supabase import AsyncClient, acreate_client
 
-from core.settings import settings
+from shared.core.settings import settings
 
 url: str = settings.SUPABASE_URL
 key: str = settings.SUPABASE_SERVICE_KEY
