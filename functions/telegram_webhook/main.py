@@ -20,10 +20,13 @@ def handler(request: Request):
 
         if not validate_secret_token(secret_token, logger=logger):
             logger.warning("Invalid secret token.")
-            return make_response(json.dumps({
-                "status": "error",
-                "message": "Forbidden",
-            }), 403)
+            return make_response(
+                json.dumps({
+                    "status": "error",
+                    "message": "Forbidden",
+                }),
+                200,
+            )
 
         payload = request.get_json(silent=True) or {}
         asyncio.run(main_logic(payload, logger=logger))
