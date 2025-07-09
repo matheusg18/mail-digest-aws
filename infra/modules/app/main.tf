@@ -147,18 +147,21 @@ data "archive_file" "dispatcher_zip" {
   type        = "zip"
   source_dir  = "${path.module}/../../../build/dispatcher"
   output_path = "${path.module}/dispatcher.zip"
+  excludes    = ["**/__pycache__", "**/*.pyc"]
 }
 
 data "archive_file" "worker_zip" {
   type        = "zip"
   source_dir  = "${path.module}/../../../build/worker"
   output_path = "${path.module}/worker.zip"
+  excludes    = ["**/__pycache__", "**/*.pyc"]
 }
 
 data "archive_file" "telegram_webhook_zip" {
   type        = "zip"
   source_dir  = "${path.module}/../../../build/telegram_webhook"
   output_path = "${path.module}/telegram_webhook.zip"
+  excludes    = ["**/__pycache__", "**/*.pyc"]
 }
 
 resource "google_storage_bucket_object" "dispatcher_archive" {
@@ -192,7 +195,7 @@ resource "google_cloudfunctions2_function" "summary_dispatcher_function" {
 
   build_config {
     runtime     = "python313"
-    entry_point = "lambda_handler"
+    entry_point = "handler"
     source {
       storage_source {
         bucket = google_storage_bucket.functions_source_bucket.name
@@ -212,6 +215,7 @@ resource "google_cloudfunctions2_function" "summary_dispatcher_function" {
     environment_variables = {
       GCP_PROJECT     = var.gcp_project_id
       PUBSUB_TOPIC_ID = google_pubsub_topic.summary_jobs.name
+      LOG_FORMAT      = "json"
     }
 
     # Secret Manager secrets as environment variables
@@ -240,7 +244,7 @@ resource "google_cloudfunctions2_function" "summary_worker_function" {
 
   build_config {
     runtime     = "python313"
-    entry_point = "lambda_handler"
+    entry_point = "handler"
     source {
       storage_source {
         bucket = google_storage_bucket.functions_source_bucket.name
@@ -259,6 +263,7 @@ resource "google_cloudfunctions2_function" "summary_worker_function" {
     # Regular environment variables
     environment_variables = {
       GCP_PROJECT = var.gcp_project_id
+      LOG_FORMAT  = "json"
     }
 
     # All Secret Manager secrets as environment variables
@@ -322,7 +327,7 @@ resource "google_cloudfunctions2_function" "telegram_webhook_function" {
 
   build_config {
     runtime     = "python313"
-    entry_point = "lambda_handler"
+    entry_point = "handler"
     source {
       storage_source {
         bucket = google_storage_bucket.functions_source_bucket.name
@@ -342,6 +347,7 @@ resource "google_cloudfunctions2_function" "telegram_webhook_function" {
     # Regular environment variables
     environment_variables = {
       GCP_PROJECT = var.gcp_project_id
+      LOG_FORMAT  = "json"
     }
 
     # Secrets needed for Telegram webhook
@@ -349,6 +355,13 @@ resource "google_cloudfunctions2_function" "telegram_webhook_function" {
       key        = "TELEGRAM_BOT_TOKEN"
       project_id = var.gcp_project_id
       secret     = google_secret_manager_secret.secrets["TELEGRAM_BOT_TOKEN"].secret_id
+      version    = "latest"
+    }
+
+    secret_environment_variables {
+      key        = "TELEGRAM_WEBHOOK_SECRET_TOKEN"
+      project_id = var.gcp_project_id
+      secret     = google_secret_manager_secret.secrets["TELEGRAM_WEBHOOK_SECRET_TOKEN"].secret_id
       version    = "latest"
     }
 
