@@ -6,6 +6,7 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8", extra="ignore"
     )
 
+    GCP_PROJECT: str = ""
     SUPABASE_URL: str = ""
     SUPABASE_SERVICE_KEY: str = ""
     OPENAI_API_KEY: str = ""
@@ -15,6 +16,7 @@ class Settings(BaseSettings):
     GOOGLE_CLIENT_SECRET: str = ""
     TOKEN_ENCRYPTION_KEY: str = ""
     LOG_FORMAT: str = "text"
+    PUBSUB_TOPIC_ID: str = ""
 
 
 settings = Settings()

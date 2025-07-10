@@ -1,18 +1,13 @@
 import asyncio
 import json
-import os
 
 import functions_framework
 from flask import Request, make_response
 from google.cloud import pubsub_v1
 
 from shared.core.logger import L
+from shared.core.settings import settings
 from shared.core.supabase_client import create_supabase_client
-
-PROJECT_ID = os.environ.get("GCP_PROJECT") or os.environ.get(
-    "GOOGLE_CLOUD_PROJECT"
-)
-PUBSUB_TOPIC = os.environ.get("PUBSUB_TOPIC")
 
 
 async def get_active_mail_accounts_from_db(*, logger):
@@ -52,7 +47,7 @@ def handler(request: Request):
 
 
 async def main_logic(*, logger):
-    if not PROJECT_ID or not PUBSUB_TOPIC:
+    if not settings.GCP_PROJECT or not settings.PUBSUB_TOPIC_ID:
         raise EnvironmentError(
             "GCP_PROJECT/GOOGLE_CLOUD_PROJECT and PUBSUB_TOPIC environment variables must be set."
         )
@@ -113,7 +108,11 @@ async def main_logic(*, logger):
 
 async def publish_to_pubsub(message_body: str, logger):
     publisher = pubsub_v1.PublisherClient()
-    topic_path = publisher.topic_path(PROJECT_ID, PUBSUB_TOPIC)
+    topic_path = publisher.topic_path(
+        settings.GCP_PROJECT, settings.PUBSUB_TOPIC_ID
+    )
     future = publisher.publish(topic_path, message_body.encode("utf-8"))
     await asyncio.get_event_loop().run_in_executor(None, future.result)
-    logger.info(f"Published message to {PUBSUB_TOPIC}: {message_body}")
+    logger.info(
+        f"Published message to {settings.PUBSUB_TOPIC_ID}: {message_body}"
+    )

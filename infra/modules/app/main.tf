@@ -390,6 +390,15 @@ resource "google_cloud_run_service_iam_member" "telegram_webhook_invoker" {
   member   = "allUsers"
 }
 
+# Allow the Cloud Scheduler to invoke the summary_dispatcher function
+resource "google_cloud_run_service_iam_member" "dispatcher_invoker" {
+  project  = google_cloudfunctions2_function.summary_dispatcher_function.project
+  location = google_cloudfunctions2_function.summary_dispatcher_function.location
+  service  = google_cloudfunctions2_function.summary_dispatcher_function.name
+  role     = "roles/run.invoker"
+  member   = "serviceAccount:${google_service_account.dispatcher_sa.email}"
+}
+
 # ==============================================================================
 # SCHEDULER (CRON JOB)
 #
