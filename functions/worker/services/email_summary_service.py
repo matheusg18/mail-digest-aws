@@ -2,13 +2,13 @@ import json
 import uuid
 from typing import List
 
-from langchain.schema import Document
-
-from functions.worker.chains import (
+from chains import (
     generate_aggregated_summary,
     summarize_email_chain,
 )
-from functions.worker.loaders.gmail_loader import GmailLoader
+from langchain.schema import Document
+from loaders.gmail_loader import GmailLoader
+
 from shared.services import (
     google_auth_service,
     mail_account_service,

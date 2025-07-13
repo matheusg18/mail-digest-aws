@@ -2,8 +2,8 @@ from langchain.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
 from langchain_core.messages import SystemMessage
 from langchain_openai import ChatOpenAI
 from pydantic import SecretStr
+from schemas.email_summary_schema import EmailSummarySchema
 
-from functions.worker.schemas.email_summary_schema import EmailSummarySchema
 from shared.core.settings import settings
 
 llm = ChatOpenAI(

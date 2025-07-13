@@ -4,10 +4,10 @@ import json
 
 import functions_framework
 from cloudevents.http import CloudEvent
-
-from functions.worker.services.email_summary_service import (
+from services.email_summary_service import (
     generate_daily_email_summary,
 )
+
 from shared.core.logger import L
 
 
