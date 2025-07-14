@@ -2,14 +2,14 @@ import json
 import sys
 import traceback
 
-from loguru import logger as loguru_logger
+from loguru import logger
 
 from shared.core.settings import settings
 
-loguru_logger.remove()
+logger.remove()
 
 if settings.LOG_FORMAT == "text":
-    loguru_logger.add(
+    logger.add(
         sys.stderr,
         format=(
             "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | "
@@ -56,14 +56,7 @@ else:
 
         return json.dumps(log_payload) + "\n"
 
-    loguru_logger.add(
+    logger.add(
         sink=lambda msg: sys.stderr.write(gcp_formatter(msg.record)),  # type: ignore
         level="INFO",
     )
-
-
-def L(request_id: str = "local"):
-    return loguru_logger.bind(request_id=request_id)
-
-
-__all__ = ["L"]
