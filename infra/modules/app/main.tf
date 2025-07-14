@@ -42,13 +42,13 @@ resource "google_pubsub_subscription" "summary_jobs_subscription" {
   ack_deadline_seconds = 600
 }
 
-# Subscription for the Dead Letter Queue topic to ensure failed messages are retained and visible
+# Subscription for the Dead Letter Queue topic
 resource "google_pubsub_subscription" "summary_jobs_dlq_subscription" {
   name    = "mail-digest-summary-jobs-dlq-subscription"
   topic   = google_pubsub_topic.summary_jobs_dlq.name
   project = var.gcp_project_id
 
-  # Retain messages for 7 days for inspection
+  # Retain messages for 7 days
   message_retention_duration = "604800s"
   ack_deadline_seconds       = 600
 }
@@ -69,6 +69,13 @@ resource "google_service_account" "worker_sa" {
   project      = var.gcp_project_id
   account_id   = "worker-sa"
   display_name = "Sumio - Summary Worker SA"
+}
+
+# Service account for Telegram Webhook
+resource "google_service_account" "telegram_webhook_sa" {
+  project      = var.gcp_project_id
+  account_id   = "telegram-webhook-sa"
+  display_name = "Sumio - Telegram Webhook SA"
 }
 
 # ==============================================================================
@@ -139,6 +146,14 @@ resource "google_pubsub_subscription_iam_member" "dlq_subscription_subscriber" {
   member       = "serviceAccount:service-${data.google_project.project.number}@gcp-sa-pubsub.iam.gserviceaccount.com"
 }
 
+# Grant Pub/Sub service account Subscriber role on main subscription (required for DLQ forwarding)
+resource "google_pubsub_subscription_iam_member" "main_subscription_subscriber" {
+  project      = var.gcp_project_id
+  subscription = google_pubsub_subscription.summary_jobs_subscription.name
+  role         = "roles/pubsub.subscriber"
+  member       = "serviceAccount:service-${data.google_project.project.number}@gcp-sa-pubsub.iam.gserviceaccount.com"
+}
+
 # Grant the Dispatcher SA access to the secrets it needs.
 resource "google_secret_manager_secret_iam_member" "dispatcher_secret_access" {
   for_each = toset([
@@ -160,6 +175,21 @@ resource "google_secret_manager_secret_iam_member" "worker_secret_access" {
   secret_id = each.value.secret_id
   role      = "roles/secretmanager.secretAccessor"
   member    = "serviceAccount:${google_service_account.worker_sa.email}"
+}
+
+# Grant the Telegram Webhook SA access to all application secrets.
+resource "google_secret_manager_secret_iam_member" "telegram_webhook_secret_access" {
+  for_each = toset([
+    "SUPABASE_URL",
+    "SUPABASE_SERVICE_KEY",
+    "TELEGRAM_BOT_TOKEN",
+    "TELEGRAM_WEBHOOK_SECRET_TOKEN",
+  ])
+
+  project   = var.gcp_project_id
+  secret_id = google_secret_manager_secret.secrets[each.key].secret_id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.telegram_webhook_sa.email}"
 }
 
 # ==============================================================================
@@ -374,7 +404,7 @@ resource "google_cloudfunctions2_function" "telegram_webhook_function" {
     available_memory               = "256Mi"
     timeout_seconds                = 60
     all_traffic_on_latest_revision = true
-    service_account_email          = google_service_account.worker_sa.email
+    service_account_email          = google_service_account.telegram_webhook_sa.email
 
     # Regular environment variables
     environment_variables = {
