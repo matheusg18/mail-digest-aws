@@ -8,6 +8,7 @@ from chains import (
 )
 from langchain.schema import Document
 from loaders.gmail_loader import GmailLoader
+from loguru import logger
 
 from shared.services import (
     google_auth_service,
@@ -19,12 +20,8 @@ from shared.services.delivery_channel_service import (
 )
 
 
-async def generate_daily_email_summary(
-    mail_account_id: uuid.UUID, *, logger
-) -> None:
-    mail_account = await mail_account_service.get_mail_account(
-        mail_account_id, logger=logger
-    )
+async def generate_daily_email_summary(mail_account_id: uuid.UUID) -> None:
+    mail_account = await mail_account_service.get_mail_account(mail_account_id)
     if not mail_account:
         raise ValueError(f"Mail account with ID {mail_account_id} not found.")
 
@@ -34,9 +31,7 @@ async def generate_daily_email_summary(
         )
 
     gmail_loader = GmailLoader(
-        await google_auth_service.get_access_token(
-            mail_account.credentials, logger=logger
-        ),
+        await google_auth_service.get_access_token(mail_account.credentials),
         days=1,
     )
     documents = await gmail_loader.aload()
@@ -48,7 +43,7 @@ async def generate_daily_email_summary(
         )
 
     logger.info(f"Found {len(documents)} emails to summarize.")
-    summaries = await _batch_summarize_emails(documents, logger=logger)
+    summaries = await _batch_summarize_emails(documents)
 
     aggregated_summary = await generate_aggregated_summary.chain.ainvoke(
         {
@@ -62,7 +57,7 @@ async def generate_daily_email_summary(
     )
 
     active_delivery_channels = await get_active_delivery_channels(
-        mail_account.user_id, logger=logger
+        mail_account.user_id
     )
     telegram_delivery_channel = active_delivery_channels[0]
 
@@ -81,9 +76,7 @@ async def generate_daily_email_summary(
     )
 
 
-async def _batch_summarize_emails(
-    documents: List[Document], *, logger
-) -> list[Document]:
+async def _batch_summarize_emails(documents: List[Document]) -> list[Document]:
     logger.info(f"Summarizing {len(documents)} emails in batch.")
     input_data_list = [
         {

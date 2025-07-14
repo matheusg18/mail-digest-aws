@@ -4,24 +4,21 @@ import json
 
 import functions_framework
 from cloudevents.http import CloudEvent
+from loguru import logger
 from services.email_summary_service import (
     generate_daily_email_summary,
 )
 
-from shared.core.logger import L
-
 
 @functions_framework.cloud_event
 def handler(cloud_event: CloudEvent):
-    request_id = cloud_event["id"] if "id" in cloud_event else "local"
-    logger = L(request_id)
     logger.info(
         "Starting execution of the worker function (GCP Pub/Sub trigger)."
     )
-    asyncio.run(main_logic(cloud_event, logger=logger))
+    asyncio.run(main_logic(cloud_event))
 
 
-async def main_logic(cloud_event, *, logger):
+async def main_logic(cloud_event):
     try:
         data = cloud_event.data
         if isinstance(data, dict) and "message" in data:
@@ -46,7 +43,7 @@ async def main_logic(cloud_event, *, logger):
                 f"{decoded}"
             )
             return {"status": "error", "message": "Missing mail_account_id."}
-        await process_single_account(mail_account_id, logger=logger)
+        await process_single_account(mail_account_id)
         return {"status": "ok"}
     except Exception as e:
         logger.exception(
@@ -55,5 +52,5 @@ async def main_logic(cloud_event, *, logger):
         return {"status": "error", "message": str(e)}
 
 
-async def process_single_account(mail_account_id, *, logger):
-    await generate_daily_email_summary(mail_account_id, logger=logger)
+async def process_single_account(mail_account_id):
+    await generate_daily_email_summary(mail_account_id)

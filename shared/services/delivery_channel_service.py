@@ -1,12 +1,14 @@
 import uuid
 from typing import List
 
+from loguru import logger
+
 from shared.core.supabase_client import create_supabase_client
 from shared.domain.delivery_channel import DeliveryChannel
 
 
 async def get_active_delivery_channels(
-    user_id: uuid.UUID, *, logger
+    user_id: uuid.UUID,
 ) -> List[DeliveryChannel]:
     supabase = await create_supabase_client()
     try:

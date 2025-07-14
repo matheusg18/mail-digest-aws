@@ -1,13 +1,13 @@
 import uuid
 
+from loguru import logger
+
 from shared.core.supabase_client import create_supabase_client
 from shared.domain.mail_account import MailAccount
 from shared.utils.security.crypto import decrypt_token
 
 
-async def get_mail_account(
-    mail_account_id: uuid.UUID, *, logger
-) -> MailAccount | None:
+async def get_mail_account(mail_account_id: uuid.UUID) -> MailAccount | None:
     supabase = await create_supabase_client()
     try:
         logger.info(f"Fetching mail account with ID: {mail_account_id}")
