@@ -1,6 +1,7 @@
 from http import HTTPStatus
 
 import httpx
+from loguru import logger
 
 from shared.core.settings import settings
 from shared.domain.delivery_channel import DeliveryChannelEnum
@@ -10,7 +11,7 @@ TELEGRAM_API_URL = f"https://api.telegram.org/bot{settings.TELEGRAM_BOT_TOKEN}"
 START_COMMAND_PARTS = 2
 
 
-async def deal_with_webhook_message(message: dict, *, logger) -> None:
+async def deal_with_webhook_message(message: dict) -> None:
     text = message.get("text", "")
     chat_id = message.get("chat", {}).get("id")
 
@@ -19,10 +20,10 @@ async def deal_with_webhook_message(message: dict, *, logger) -> None:
         return
 
     if text.startswith("/start"):
-        await handle_start_command(message, logger=logger)
+        await handle_start_command(message)
 
 
-async def handle_start_command(message: dict, *, logger) -> None:
+async def handle_start_command(message: dict) -> None:
     text = message.get("text", "")
     chat_id = message.get("chat", {}).get("id")
 
@@ -34,7 +35,7 @@ async def handle_start_command(message: dict, *, logger) -> None:
     user_id = parts[1]
     logger.info(f"Processing /start command for code: {user_id}")
 
-    user = await user_service.get_user(user_id=user_id, logger=logger)
+    user = await user_service.get_user(user_id=user_id)
     if not user:
         logger.warning(f"User with ID {user_id} not found.")
         await send_message(
@@ -48,7 +49,6 @@ async def handle_start_command(message: dict, *, logger) -> None:
             user_id=user_id,
             chat_id=chat_id,
             channel_type=DeliveryChannelEnum.TELEGRAM,
-            logger=logger,
         )
         logger.success(f"Telegram connected successfully for user: {user_id}")
         await send_message(chat_id, "✅ Telegram conectado com sucesso!")

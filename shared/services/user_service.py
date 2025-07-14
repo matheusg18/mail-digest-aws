@@ -1,12 +1,14 @@
 import json
 import uuid
 
+from loguru import logger
+
 from shared.core.supabase_client import create_supabase_client
 from shared.domain.delivery_channel import DeliveryChannel, DeliveryChannelEnum
 from shared.domain.user import User
 
 
-async def get_user(user_id: uuid.UUID, *, logger) -> User | None:
+async def get_user(user_id: uuid.UUID) -> User | None:
     supabase = await create_supabase_client()
     try:
         logger.info(f"Fetching user with ID: {user_id}")
@@ -33,8 +35,6 @@ async def add_delivery_channel(
     chat_id: int,
     channel_type: DeliveryChannelEnum,
     is_active: bool = True,
-    *,
-    logger,
 ) -> DeliveryChannel:
     supabase = await create_supabase_client()
     try:
