@@ -42,6 +42,17 @@ resource "google_pubsub_subscription" "summary_jobs_subscription" {
   ack_deadline_seconds = 600
 }
 
+# Subscription for the Dead Letter Queue topic to ensure failed messages are retained and visible
+resource "google_pubsub_subscription" "summary_jobs_dlq_subscription" {
+  name    = "mail-digest-summary-jobs-dlq-subscription"
+  topic   = google_pubsub_topic.summary_jobs_dlq.name
+  project = var.gcp_project_id
+
+  # Retain messages for 7 days for inspection
+  message_retention_duration = "604800s"
+  ack_deadline_seconds       = 600
+}
+
 # ==============================================================================
 # IAM & SERVICE ACCOUNTS
 #
@@ -105,6 +116,27 @@ resource "google_project_iam_member" "worker_pubsub_publisher" {
   project = var.gcp_project_id
   role    = "roles/pubsub.publisher"
   member  = "serviceAccount:${google_service_account.worker_sa.email}"
+}
+
+# Get project number for Pub/Sub service account
+data "google_project" "project" {
+  project_id = var.gcp_project_id
+}
+
+# Grant Pub/Sub service account Editor role on DLQ topic
+resource "google_pubsub_topic_iam_member" "dlq_topic_editor" {
+  project = var.gcp_project_id
+  topic   = google_pubsub_topic.summary_jobs_dlq.name
+  role    = "roles/editor"
+  member  = "serviceAccount:service-${data.google_project.project.number}@gcp-sa-pubsub.iam.gserviceaccount.com"
+}
+
+# Grant Pub/Sub service account Subscriber role on DLQ subscription
+resource "google_pubsub_subscription_iam_member" "dlq_subscription_subscriber" {
+  project      = var.gcp_project_id
+  subscription = google_pubsub_subscription.summary_jobs_dlq_subscription.name
+  role         = "roles/pubsub.subscriber"
+  member       = "serviceAccount:service-${data.google_project.project.number}@gcp-sa-pubsub.iam.gserviceaccount.com"
 }
 
 # Grant the Dispatcher SA access to the secrets it needs.
