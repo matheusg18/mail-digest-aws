@@ -1,7 +1,7 @@
 import asyncio
 import json
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, List
 
 import functions_framework
@@ -17,7 +17,7 @@ publisher = pubsub_v1.PublisherClient()
 
 @functions_framework.http
 def handler(request: Request):
-    triggered_hour = get_triggered_hour(request)
+    triggered_hour = datetime.now(timezone.utc).hour
     logger.info(
         "Starting dispatcher execution. "
         f"Triggered hour (UTC): {triggered_hour}"
@@ -31,17 +31,6 @@ def handler(request: Request):
         return make_response(
             json.dumps({"status": "error", "message": str(e)}), 500
         )
-
-
-def get_triggered_hour(request: Request) -> int:
-    data = request.get_json(silent=True)
-    schedule_time = data.get("scheduleTime") if data else None
-
-    if schedule_time:
-        dt = datetime.fromisoformat(schedule_time.replace("Z", "+00:00"))
-        return dt.hour
-
-    raise ValueError("scheduleTime is required in the request body.")
 
 
 async def main_logic(triggered_hour: int):
