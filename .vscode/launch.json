@@ -1,0 +1,22 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug Dispatcher Function",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "functions_framework",
+            "args": [
+                "--source=functions/dispatcher/main.py",
+                "--target=handler",
+                "--port=8080",
+                "--debug"
+            ],
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            },
+            "console": "integratedTerminal",
+            "justMyCode": true
+        }
+    ]
+}
