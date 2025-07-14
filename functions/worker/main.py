@@ -9,6 +9,8 @@ from services.email_summary_service import (
     generate_daily_email_summary,
 )
 
+import shared.core.logger  # noqa: F401
+
 
 @functions_framework.cloud_event
 def handler(cloud_event: CloudEvent):

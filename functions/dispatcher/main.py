@@ -9,6 +9,7 @@ from flask import Request, make_response
 from google.cloud import pubsub_v1
 from loguru import logger
 
+import shared.core.logger  # noqa: F401
 from shared.core.settings import settings
 from shared.core.supabase_client import create_supabase_client
 

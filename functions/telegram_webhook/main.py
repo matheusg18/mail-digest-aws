@@ -5,6 +5,7 @@ import functions_framework
 from flask import Request, make_response
 from loguru import logger
 
+import shared.core.logger  # noqa: F401
 from shared.core.settings import settings
 from shared.services.telegram_service import deal_with_webhook_message
 
