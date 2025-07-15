@@ -5,13 +5,14 @@ from loguru import logger
 
 from shared.core.settings import settings
 from shared.domain.delivery_channel import DeliveryChannelEnum
+from shared.exceptions.SumioException import SumioException
 from shared.services import user_service
 
 TELEGRAM_API_URL = f"https://api.telegram.org/bot{settings.TELEGRAM_BOT_TOKEN}"
 START_COMMAND_PARTS = 2
 
 
-async def deal_with_webhook_message(message: dict) -> None:
+async def process_webhook_message(message: dict) -> None:
     text = message.get("text", "")
     chat_id = message.get("chat", {}).get("id")
 
@@ -20,10 +21,10 @@ async def deal_with_webhook_message(message: dict) -> None:
         return
 
     if text.startswith("/start"):
-        await handle_start_command(message)
+        await _handle_start_command(message)
 
 
-async def handle_start_command(message: dict) -> None:
+async def _handle_start_command(message: dict) -> None:
     text = message.get("text", "")
     chat_id = message.get("chat", {}).get("id")
 
@@ -60,12 +61,23 @@ async def handle_start_command(message: dict) -> None:
         )
 
 
-async def send_message(chat_id: int, text: str) -> bool:
+async def send_message(chat_id: int, text: str) -> None:
     async with httpx.AsyncClient() as client:
         response = await client.post(
             f"{TELEGRAM_API_URL}/sendMessage",
             json={"chat_id": chat_id, "text": text},
         )
-        return response.status_code == HTTPStatus.OK and response.json().get(
+
+        is_ok = response.status_code == HTTPStatus.OK and response.json().get(
             "ok", False
         )
+        if not is_ok:
+            raise SumioException(
+                "Failed to send Telegram message",
+                code=response.status_code,
+                details={
+                    "chat_id": chat_id,
+                    "text": text,
+                    "response": response.json(),
+                },
+            )

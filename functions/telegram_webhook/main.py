@@ -7,7 +7,7 @@ from loguru import logger
 
 import shared.core.logger  # noqa: F401
 from shared.core.settings import settings
-from shared.services.telegram_service import deal_with_webhook_message
+from shared.services.telegram_service import process_webhook_message
 
 
 @functions_framework.http
@@ -17,7 +17,7 @@ def handler(request: Request):
     try:
         secret_token = request.headers.get("X-Telegram-Bot-Api-Secret-Token")
 
-        if not validate_secret_token(secret_token):
+        if not _validate_secret_token(secret_token):
             logger.warning("Invalid secret token.")
             return make_response(
                 json.dumps({
@@ -28,7 +28,7 @@ def handler(request: Request):
             )
 
         payload = request.get_json(silent=True) or {}
-        asyncio.run(main_logic(payload))
+        asyncio.run(_main_logic(payload))
 
         return make_response(json.dumps({"status": "ok"}), 200)
     except Exception as e:
@@ -36,18 +36,18 @@ def handler(request: Request):
         return make_response(json.dumps({"status": "error"}), 200)
 
 
-def validate_secret_token(secret_token: str | None) -> bool:
+def _validate_secret_token(secret_token: str | None) -> bool:
     if not secret_token:
         return False
 
     return secret_token == settings.TELEGRAM_WEBHOOK_SECRET_TOKEN
 
 
-async def main_logic(payload: dict) -> None:
+async def _main_logic(payload: dict) -> None:
     message = payload.get("message")
     if not message:
         logger.info("No message found in the payload. Ignoring.")
         return
 
     logger.info(f"Processing message: {message}")
-    await deal_with_webhook_message(message)
+    await process_webhook_message(message)
