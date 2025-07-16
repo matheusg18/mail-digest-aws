@@ -37,9 +37,7 @@ async def list_user_delivery_channels(
         )
         return [DeliveryChannel(**channel) for channel in response.data]
     except Exception as e:
-        logger.error(
-            "Error fetching active delivery channels", extra={"error": e}
-        )
+        logger.error("Error fetching active delivery channels", extra={"error": e})
         raise SumioException(
             "Error fetching active delivery channels",
             code=HTTPStatus.INTERNAL_SERVER_ERROR,
@@ -71,11 +69,7 @@ async def add_delivery_channel(
             "Adding delivery channel",
             extra={"delivery_channel": delivery_channel.model_dump()},
         )
-        response = (
-            await supabase_client.table("delivery_channels")
-            .insert(delivery_channel.model_dump())
-            .execute()
-        )
+        response = await supabase_client.table("delivery_channels").insert(delivery_channel.model_dump()).execute()
 
         logger.success("Delivery channel added successfully")
         return DeliveryChannel(**response.data[0])

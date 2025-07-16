@@ -19,30 +19,21 @@ publisher = pubsub_v1.PublisherClient()
 @functions_framework.http
 def handler(request: Request):
     triggered_hour = datetime.now(timezone.utc).hour
-    logger.info(
-        "Starting dispatcher execution. "
-        f"Triggered hour (UTC): {triggered_hour}"
-    )
+    logger.info(f"Starting dispatcher execution. Triggered hour (UTC): {triggered_hour}")
 
     try:
         result = asyncio.run(main_logic(triggered_hour))
         return make_response(json.dumps(result), 200)
     except Exception as e:
         logger.error("Dispatcher execution failed", extra={"error": e})
-        return make_response(
-            json.dumps({"status": "error", "message": str(e)}), 500
-        )
+        return make_response(json.dumps({"status": "error", "message": str(e)}), 500)
 
 
 async def main_logic(triggered_hour: int):
-    users_with_active_mail_digest = await get_users_with_active_mail_digest_at(
-        triggered_hour
-    )
+    users_with_active_mail_digest = await get_users_with_active_mail_digest_at(triggered_hour)
 
     if not users_with_active_mail_digest:
-        logger.info(
-            f"No users found with active mail digest at {triggered_hour}h"
-        )
+        logger.info(f"No users found with active mail digest at {triggered_hour}h")
 
         return {
             "status": "ok",
@@ -53,9 +44,7 @@ async def main_logic(triggered_hour: int):
         try:
             message_body = json.dumps({"user_id": user.get("id")})
             await publish_to_pubsub(message_body)
-            logger.success(
-                f"Message sent to Pub/Sub for user: {user.get('full_name')}"
-            )
+            logger.success(f"Message sent to Pub/Sub for user: {user.get('full_name')}")
         except Exception as e:
             logger.error(
                 f"Failed to send message for user {user.get('full_name')}",
@@ -83,26 +72,17 @@ async def get_users_with_active_mail_digest_at(
             .execute()
         )
         users_with_active_mail_digest = response.data
-        users_with_active_mail_digest = [
-            x["users"] for x in users_with_active_mail_digest
-        ]
+        users_with_active_mail_digest = [x["users"] for x in users_with_active_mail_digest]
 
-        logger.success(
-            f"{len(users_with_active_mail_digest)} users found "
-            f"with active mail digest at {digest_hour}h"
-        )
+        logger.success(f"{len(users_with_active_mail_digest)} users found with active mail digest at {digest_hour}h")
         return users_with_active_mail_digest
     except Exception as e:
-        logger.error(
-            "Error fetching users with active mail digest", extra={"error": e}
-        )
+        logger.error("Error fetching users with active mail digest", extra={"error": e})
         raise e
 
 
 async def publish_to_pubsub(message_body: str):
-    topic_path = publisher.topic_path(
-        settings.GCP_PROJECT, settings.PUBSUB_TOPIC_ID
-    )
+    topic_path = publisher.topic_path(settings.GCP_PROJECT, settings.PUBSUB_TOPIC_ID)
     future = publisher.publish(topic_path, message_body.encode("utf-8"))
     loop = asyncio.get_running_loop()
 

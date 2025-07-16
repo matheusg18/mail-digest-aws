@@ -43,8 +43,7 @@ respx = "^0.22.0"
 pytest-env = "^1.1.5"
 
 [tool.ruff]
-line-length = 79
-# exclude = ["tests/"]
+line-length = 120
 
 [tool.ruff.lint]
 preview = true

@@ -1,9 +1,7 @@
 import httpx
 
 
-async def list_messages(
-    user_id: str, access_token: str, query: str = ""
-) -> list:
+async def list_messages(user_id: str, access_token: str, query: str = "") -> list:
     url = f"https://gmail.googleapis.com/gmail/v1/users/{user_id}/messages"
     params = {"q": query}
 
@@ -18,9 +16,7 @@ async def list_messages(
         return response.json().get("messages", [])
 
 
-async def get_message(
-    user_id: str, access_token: str, message_id: str
-) -> dict:
+async def get_message(user_id: str, access_token: str, message_id: str) -> dict:
     url = f"https://gmail.googleapis.com/gmail/v1/users/{user_id}/messages/{message_id}"
 
     headers = {

@@ -30,14 +30,10 @@ def decrypt_token(encrypted_token: str) -> str:
 
     except (ValueError, TypeError) as e:
         print(f"Decryption failed due to invalid format or key: {e}")
-        raise ValueError(
-            "Decryption failed: Invalid token format or key configuration."
-        )
+        raise ValueError("Decryption failed: Invalid token format or key configuration.")
     except Exception as e:
         print(f"Decryption failed with an unexpected error: {e}")
-        raise ValueError(
-            "Decryption failed: Token is invalid or has been tampered with."
-        )
+        raise ValueError("Decryption failed: Token is invalid or has been tampered with.")
 
 
 def get_encryption_key() -> bytes:
@@ -47,8 +43,6 @@ def get_encryption_key() -> bytes:
 
     key = base64.b64decode(token_encryption_key_b64)
     if len(key) != KEY_LENGTH:
-        raise ValueError(
-            f"Invalid TOKEN_ENCRYPTION_KEY length. Must be {KEY_LENGTH} bytes."
-        )
+        raise ValueError(f"Invalid TOKEN_ENCRYPTION_KEY length. Must be {KEY_LENGTH} bytes.")
 
     return key

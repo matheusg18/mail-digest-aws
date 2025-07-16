@@ -14,9 +14,7 @@ import shared.core.logger  # noqa: F401
 
 @functions_framework.cloud_event
 def handler(cloud_event: CloudEvent):
-    logger.info(
-        "Starting execution of the worker function (GCP Pub/Sub trigger)."
-    )
+    logger.info("Starting execution of the worker function (GCP Pub/Sub trigger).")
     asyncio.run(main_logic(cloud_event))
 
 
@@ -40,17 +38,12 @@ async def main_logic(cloud_event):
             return {"status": "error", "message": "Invalid message format."}
         mail_account_id = message_body.get("mail_account_id")
         if not mail_account_id:
-            logger.warning(
-                "Pub/Sub message does not contain 'mail_account_id': "
-                f"{decoded}"
-            )
+            logger.warning(f"Pub/Sub message does not contain 'mail_account_id': {decoded}")
             return {"status": "error", "message": "Missing mail_account_id."}
         await process_single_account(mail_account_id)
         return {"status": "ok"}
     except Exception as e:
-        logger.exception(
-            f"An error occurred while processing Pub/Sub message: {e}"
-        )
+        logger.exception(f"An error occurred while processing Pub/Sub message: {e}")
         return {"status": "error", "message": str(e)}
 
 

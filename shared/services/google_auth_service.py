@@ -13,9 +13,7 @@ async def get_access_token(mail_account_credentials: Dict[str, Any]) -> str:
         logger.warning("No refresh token found in mail account credentials.")
         raise ValueError("No refresh token found in mail account credentials.")
 
-    tokens = await _refresh_access_token(
-        mail_account_credentials["refresh_token"]
-    )
+    tokens = await _refresh_access_token(mail_account_credentials["refresh_token"])
     logger.info("Access token refreshed successfully.")
 
     return tokens["access_token"]

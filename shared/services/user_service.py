@@ -10,12 +10,7 @@ async def get_user(user_id: uuid.UUID) -> User | None:
     supabase = await create_supabase_client()
     try:
         logger.info(f"Fetching user with ID: {user_id}")
-        response = (
-            await supabase.table("users")
-            .select("*")
-            .eq("id", str(user_id))
-            .execute()
-        )
+        response = await supabase.table("users").select("*").eq("id", str(user_id)).execute()
 
         if not response.data:
             logger.warning(f"User with ID {user_id} not found.")

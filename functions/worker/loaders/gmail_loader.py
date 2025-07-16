@@ -20,9 +20,7 @@ class GmailLoader(BaseLoader):
     async def aload(self) -> List[Document]:
         return await self._load_recent_emails(days=self.days, query=self.query)
 
-    async def _load_recent_emails(
-        self, days: int = 1, query: str = ""
-    ) -> List[Document]:
+    async def _load_recent_emails(self, days: int = 1, query: str = "") -> List[Document]:
         """Load emails from the last N days"""
         end_date = datetime.now()
         start_date = end_date - timedelta(days=days)
@@ -67,9 +65,7 @@ class GmailLoader(BaseLoader):
             print(f"Error loading emails: {e}")
             return []
 
-    async def _get_message_content(
-        self, message_id: str
-    ) -> Dict[str, Any] | None:
+    async def _get_message_content(self, message_id: str) -> Dict[str, Any] | None:
         """Get full message content including body"""
         try:
             message = await gmail_service.get_message(
@@ -119,9 +115,7 @@ class GmailLoader(BaseLoader):
                 data = payload["body"]["data"]
                 body = base64.urlsafe_b64decode(data).decode("utf-8")
                 lines = body.splitlines()
-                cleaned_lines = [
-                    line.strip() for line in lines if line.strip()
-                ]
+                cleaned_lines = [line.strip() for line in lines if line.strip()]
                 return "\n".join(cleaned_lines)
             elif payload["mimeType"] == "text/html":
                 print("Extracting text/html part", message_id)
@@ -130,9 +124,7 @@ class GmailLoader(BaseLoader):
                 soup = BeautifulSoup(body, "html.parser")
                 text = soup.get_text()
                 lines = text.splitlines()
-                cleaned_lines = [
-                    line.strip() for line in lines if line.strip()
-                ]
+                cleaned_lines = [line.strip() for line in lines if line.strip()]
                 return "\n".join(cleaned_lines)
         return ""
 
@@ -147,9 +139,7 @@ class GmailLoader(BaseLoader):
                 data = part["body"]["data"]
                 body = base64.urlsafe_b64decode(data).decode("utf-8")
                 lines = body.splitlines()
-                cleaned_lines = [
-                    line.strip() for line in lines if line.strip()
-                ]
+                cleaned_lines = [line.strip() for line in lines if line.strip()]
                 return "\n".join(cleaned_lines)
             elif part["mimeType"] == "text/html":
                 print("Extracting text/html part", message_id)
@@ -158,8 +148,6 @@ class GmailLoader(BaseLoader):
                 soup = BeautifulSoup(body, "html.parser")
                 text = soup.get_text()
                 lines = text.splitlines()
-                cleaned_lines = [
-                    line.strip() for line in lines if line.strip()
-                ]
+                cleaned_lines = [line.strip() for line in lines if line.strip()]
                 return "\n".join(cleaned_lines)
         return ""
