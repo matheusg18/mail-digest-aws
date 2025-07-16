@@ -1,53 +1,50 @@
 import asyncio
-import json
+from http import HTTPStatus
+from typing import Any
 
 import functions_framework
-from flask import Request, make_response
+from flask import Request, Response, make_response
 from loguru import logger
 
 import shared.core.logger  # noqa: F401
 from shared.core.settings import settings
+from shared.domain.telegram.telegram_message import TelegramMessage
+from shared.exceptions.sumio_exception import SumioException
 from shared.services.telegram_service import process_webhook_message
 
 
 @functions_framework.http
-def handler(request: Request):
-    logger.info("Telegram webhook handler invoked.")
+def handler(request: Request) -> Response:
+    logger.info("Telegram webhook handler invoked")
 
     try:
-        secret_token = request.headers.get("X-Telegram-Bot-Api-Secret-Token")
-
-        if not _validate_secret_token(secret_token):
-            logger.warning("Invalid secret token.")
-            return make_response(
-                json.dumps({
-                    "status": "error",
-                    "message": "Forbidden",
-                }),
-                200,
-            )
-
+        _validate_secret_token(request)
         payload = request.get_json(silent=True) or {}
-        asyncio.run(_main_logic(payload))
-
-        return make_response(json.dumps({"status": "ok"}), 200)
+        asyncio.run(_process_payload(payload))
     except Exception as e:
-        logger.exception("Error processing webhook message", exc_info=e)
-        return make_response(json.dumps({"status": "error"}), 200)
+        logger.error("An exception occurred while processing the webhook", extra={"request": request, "error": e})
+    finally:
+        return make_response(HTTPStatus.NO_CONTENT)
 
 
-def _validate_secret_token(secret_token: str | None) -> bool:
-    if not secret_token:
-        return False
+def _validate_secret_token(request: Request) -> None:
+    secret_token = request.headers.get("X-Telegram-Bot-Api-Secret-Token")
+    if not secret_token or secret_token != settings.TELEGRAM_WEBHOOK_SECRET_TOKEN:
+        raise SumioException(
+            "Invalid secret token: token is missing or does not match.",
+            code=HTTPStatus.FORBIDDEN,
+            details={"token": secret_token},
+        )
 
-    return secret_token == settings.TELEGRAM_WEBHOOK_SECRET_TOKEN
 
+async def _process_payload(payload: dict[str, Any]) -> None:
+    if not payload.get("message"):
+        raise SumioException(
+            "Invalid payload: No message found.",
+            code=HTTPStatus.BAD_REQUEST,
+            details={"payload": payload},
+        )
 
-async def _main_logic(payload: dict) -> None:
-    message = payload.get("message")
-    if not message:
-        logger.info("No message found in the payload. Ignoring.")
-        return
-
+    message = TelegramMessage.model_validate(payload["message"])
     logger.info(f"Processing message: {message}")
     await process_webhook_message(message)
