@@ -25,7 +25,7 @@ def test_handler_success(mock_process_webhook_message, mock_make_response):
     assert mock_process_webhook_message.call_count == 1
     mock_process_webhook_message.assert_awaited_once_with(message)
     assert mock_make_response.call_count == 1
-    mock_make_response.assert_called_once_with(HTTPStatus.NO_CONTENT)
+    mock_make_response.assert_called_once_with("", HTTPStatus.NO_CONTENT)
 
 
 @patch("functions.telegram_webhook.main.make_response")
@@ -41,7 +41,7 @@ def test_handler_missing_secret_token(mock_process_webhook_message, mock_make_re
 
     mock_process_webhook_message.assert_not_called()
     assert mock_make_response.call_count == 1
-    mock_make_response.assert_called_once_with(HTTPStatus.NO_CONTENT)
+    mock_make_response.assert_called_once_with("", HTTPStatus.NO_CONTENT)
 
 
 @patch("functions.telegram_webhook.main.make_response")
@@ -57,7 +57,7 @@ def test_handler_invalid_secret_token(mock_process_webhook_message, mock_make_re
 
     mock_process_webhook_message.assert_not_called()
     assert mock_make_response.call_count == 1
-    mock_make_response.assert_called_once_with(HTTPStatus.NO_CONTENT)
+    mock_make_response.assert_called_once_with("", HTTPStatus.NO_CONTENT)
 
 
 @patch("functions.telegram_webhook.main.make_response")
@@ -72,7 +72,7 @@ def test_handler_missing_message_in_payload(mock_process_webhook_message, mock_m
 
     mock_process_webhook_message.assert_not_called()
     assert mock_make_response.call_count == 1
-    mock_make_response.assert_called_once_with(HTTPStatus.NO_CONTENT)
+    mock_make_response.assert_called_once_with("", HTTPStatus.NO_CONTENT)
 
 
 @patch("functions.telegram_webhook.main.make_response")
@@ -90,7 +90,7 @@ def test_handler_exception_in_process_webhook_message(mock_process_webhook_messa
 
     mock_process_webhook_message.assert_awaited_once_with(message)
     assert mock_make_response.call_count == 1
-    mock_make_response.assert_called_once_with(HTTPStatus.NO_CONTENT)
+    mock_make_response.assert_called_once_with("", HTTPStatus.NO_CONTENT)
 
 
 def _build_request(headers: Dict[str, str] | None = None, json_data: Dict[str, Any] | None = None) -> Request:

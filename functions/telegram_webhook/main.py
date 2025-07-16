@@ -24,7 +24,7 @@ def handler(request: Request) -> Response:
     except Exception as e:
         logger.error("An exception occurred while processing the webhook", extra={"request": request, "error": e})
     finally:
-        return make_response(HTTPStatus.NO_CONTENT)
+        return make_response("", HTTPStatus.NO_CONTENT)
 
 
 def _validate_secret_token(request: Request) -> None:
@@ -46,5 +46,5 @@ async def _process_payload(payload: dict[str, Any]) -> None:
         )
 
     message = TelegramMessage.model_validate(payload["message"])
-    logger.info(f"Processing message: {message}")
+    logger.info("Processing message", extra={"message": message.model_dump()})
     await process_webhook_message(message)

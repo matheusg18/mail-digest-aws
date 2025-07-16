@@ -19,7 +19,7 @@ async def list_user_delivery_channels(
     try:
         logger.info(
             f"Fetching delivery channels for user ID: {user_id}",
-            extra={"is_active": is_active, "channel_type": channel_type},
+            extra={"is_active": is_active, "channel_type": str(channel_type)},
         )
 
         query = supabase_client.table("delivery_channels").select("*")
