@@ -16,7 +16,7 @@ from shared.services import (
     telegram_service,
 )
 from shared.services.delivery_channel_service import (
-    get_active_delivery_channels,
+    list_user_delivery_channels,
 )
 
 
@@ -56,8 +56,9 @@ async def generate_daily_email_summary(mail_account_id: uuid.UUID) -> None:
         },
     )
 
-    active_delivery_channels = await get_active_delivery_channels(
-        mail_account.user_id
+    active_delivery_channels = await list_user_delivery_channels(
+        mail_account.user_id,
+        is_active=True,
     )
     telegram_delivery_channel = active_delivery_channels[0]
 
