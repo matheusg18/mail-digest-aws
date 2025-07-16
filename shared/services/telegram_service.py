@@ -1,3 +1,4 @@
+import uuid
 from http import HTTPStatus
 
 import httpx
@@ -5,38 +6,56 @@ from loguru import logger
 
 from shared.core.settings import settings
 from shared.domain.delivery_channel import DeliveryChannelEnum
+from shared.domain.telegram.telegram_message import TelegramMessage
 from shared.exceptions.SumioException import SumioException
-from shared.services import user_service
+from shared.services import delivery_channel_service, user_service
 
 TELEGRAM_API_URL = f"https://api.telegram.org/bot{settings.TELEGRAM_BOT_TOKEN}"
-START_COMMAND_PARTS = 2
 
 
-async def process_webhook_message(message: dict) -> None:
-    text = message.get("text", "")
-    chat_id = message.get("chat", {}).get("id")
-
-    if not text or not chat_id:
-        logger.info("No text or chat_id found in the message. Ignoring.")
+async def process_webhook_message(message: TelegramMessage) -> None:
+    if (
+        message.chat is None
+        or not message.text
+        or not getattr(message.chat, "id", None)
+    ):
+        logger.warning(
+            "No chat, text, or chat_id found in the message. Ignoring.",
+            extra={"message": message.model_dump()},
+        )
         return
 
-    if text.startswith("/start"):
-        await _handle_start_command(message)
+    if message.text.startswith("/start"):
+        await _handle_start_command(message.text, message.chat.id)
 
 
-async def _handle_start_command(message: dict) -> None:
-    text = message.get("text", "")
-    chat_id = message.get("chat", {}).get("id")
-
+async def _handle_start_command(text: str, chat_id: int) -> None:
+    START_COMMAND_PARTS = 2
     parts = text.split()
     if len(parts) != START_COMMAND_PARTS:
-        logger.warning(f"Malformed /start command received: {text}")
+        logger.warning(
+            f"Malformed /start command received: {text}",
+            extra={"chat_id": chat_id},
+        )
         return
 
-    user_id = parts[1]
-    logger.info(f"Processing /start command for code: {user_id}")
+    try:
+        user_id = uuid.UUID(parts[1])
+    except (ValueError, AttributeError) as e:
+        logger.warning(
+            f"Invalid UUID provided in /start command: {parts[1]}",
+            extra={"chat_id": chat_id, "error": str(e)},
+        )
+        return
 
-    user = await user_service.get_user(user_id=user_id)
+    logger.info(f"Processing /start command for code: {user_id}")
+    await _add_telegram_delivery_channel(user_id, chat_id)
+
+
+async def _add_telegram_delivery_channel(
+    user_id: uuid.UUID, chat_id: int
+) -> None:
+    user = await user_service.get_user(user_id)
     if not user:
         logger.warning(f"User with ID {user_id} not found.")
         await send_message(
@@ -45,8 +64,17 @@ async def _handle_start_command(message: dict) -> None:
         )
         return
 
+    if _user_already_has_telegram_channel(user_id):
+        logger.warning(
+            f"User with ID {user_id} already has a Telegram channel connected."
+        )
+        await send_message(
+            chat_id, "ℹ️ Telegram já está conectado para este usuário!"
+        )
+        return
+
     try:
-        await user_service.add_delivery_channel(
+        await delivery_channel_service.add_delivery_channel(
             user_id=user_id,
             chat_id=chat_id,
             channel_type=DeliveryChannelEnum.TELEGRAM,
@@ -54,11 +82,18 @@ async def _handle_start_command(message: dict) -> None:
         logger.success(f"Telegram connected successfully for user: {user_id}")
         await send_message(chat_id, "✅ Telegram conectado com sucesso!")
     except Exception as e:
-        logger.exception(f"Error connecting Telegram for user {user_id}: {e}")
+        logger.error(f"Error connecting Telegram for user {user_id}: {e}")
         await send_message(
             chat_id,
             "❌ Erro ao conectar com o Telegram. Tente novamente mais tarde.",
         )
+
+
+async def _user_already_has_telegram_channel(user_id: uuid.UUID) -> bool:
+    channels = await delivery_channel_service.list_user_delivery_channels(
+        user_id, channel_type=DeliveryChannelEnum.TELEGRAM
+    )
+    return len(channels) > 0
 
 
 async def send_message(chat_id: int, text: str) -> None:
