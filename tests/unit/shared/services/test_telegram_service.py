@@ -7,7 +7,7 @@ from httpx import Response
 
 from shared.core.settings import settings
 from shared.domain.delivery_channel import DeliveryChannelEnum
-from shared.exceptions.SumioException import SumioException
+from shared.exceptions.sumio_exception import SumioException
 from shared.services import telegram_service
 from tests.factories import DeliveryChannelFactory, TelegramChatFactory, TelegramMessageFactory, UserFactory
 

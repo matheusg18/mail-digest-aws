@@ -6,7 +6,7 @@ from loguru import logger
 
 from shared.core.supabase_client import create_supabase_client
 from shared.domain.delivery_channel import DeliveryChannel, DeliveryChannelEnum
-from shared.exceptions.SumioException import SumioException
+from shared.exceptions.sumio_exception import SumioException
 
 
 async def list_user_delivery_channels(

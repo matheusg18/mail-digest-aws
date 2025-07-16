@@ -7,7 +7,7 @@ from loguru import logger
 from shared.core.settings import settings
 from shared.domain.delivery_channel import DeliveryChannelEnum
 from shared.domain.telegram.telegram_message import TelegramMessage
-from shared.exceptions.SumioException import SumioException
+from shared.exceptions.sumio_exception import SumioException
 from shared.services import delivery_channel_service, user_service
 
 TELEGRAM_API_URL = f"https://api.telegram.org/bot{settings.TELEGRAM_BOT_TOKEN}"
