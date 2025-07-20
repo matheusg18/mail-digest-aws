@@ -1,93 +1,36 @@
 import asyncio
-import json
-import uuid
 from datetime import datetime, timezone
-from typing import Dict, List
+from http import HTTPStatus
+from typing import Any, Dict
 
 import functions_framework
 from flask import Request, make_response
-from google.cloud import pubsub_v1
 from loguru import logger
 
 import shared.core.logger  # noqa: F401
 from shared.core.settings import settings
-from shared.core.supabase_client import create_supabase_client
+from shared.services.user_service import get_users_with_active_mail_digest_at
 
-publisher = pubsub_v1.PublisherClient()
+from .services.pubsub_service import publish_messages
 
 
 @functions_framework.http
 def handler(request: Request):
-    triggered_hour = datetime.now(timezone.utc).hour
-    logger.info(f"Starting dispatcher execution. Triggered hour (UTC): {triggered_hour}")
+    logger.info("Dispatcher handler invoked")
 
     try:
-        result = asyncio.run(main_logic(triggered_hour))
-        return make_response(json.dumps(result), 200)
+        triggered_hour = datetime.now(timezone.utc).hour
+        result = asyncio.run(_process_mail_digest(triggered_hour))
+        return make_response(result, HTTPStatus.OK)
     except Exception as e:
         logger.error("Dispatcher execution failed", extra={"error": e})
-        return make_response(json.dumps({"status": "error", "message": str(e)}), 500)
+        return make_response({"status": "error", "message": str(e)}, HTTPStatus.INTERNAL_SERVER_ERROR)
 
 
-async def main_logic(triggered_hour: int):
+async def _process_mail_digest(triggered_hour: int) -> Dict[str, Any]:
     users_with_active_mail_digest = await get_users_with_active_mail_digest_at(triggered_hour)
+    messages = [{"user_id": str(user.id)} for user in users_with_active_mail_digest]
+    result = publish_messages(messages, settings.PUBSUB_TOPIC_ID)
 
-    if not users_with_active_mail_digest:
-        logger.info(f"No users found with active mail digest at {triggered_hour}h")
-
-        return {
-            "status": "ok",
-            "message": "No active mail accounts found.",
-        }
-
-    for user in users_with_active_mail_digest:
-        try:
-            message_body = json.dumps({"user_id": user.get("id")})
-            await publish_to_pubsub(message_body)
-            logger.success(f"Message sent to Pub/Sub for user: {user.get('full_name')}")
-        except Exception as e:
-            logger.error(
-                f"Failed to send message for user {user.get('full_name')}",
-                extra={"error": e},
-            )
-
-    return {
-        "status": "ok",
-        "message": "Process completed.",
-    }
-
-
-async def get_users_with_active_mail_digest_at(
-    digest_hour: int,
-) -> List[Dict[str, uuid.UUID]]:
-    logger.info(f"Searching for users with active digest at {digest_hour}h...")
-    supabase = await create_supabase_client()
-
-    try:
-        response = (
-            await supabase.from_("mail_digest_configs")
-            .select("digest_hour, is_active, users(id, full_name)")
-            .eq("digest_hour", digest_hour)
-            .eq("is_active", True)
-            .execute()
-        )
-        users_with_active_mail_digest = response.data
-        users_with_active_mail_digest = [x["users"] for x in users_with_active_mail_digest]
-
-        logger.success(f"{len(users_with_active_mail_digest)} users found with active mail digest at {digest_hour}h")
-        return users_with_active_mail_digest
-    except Exception as e:
-        logger.error("Error fetching users with active mail digest", extra={"error": e})
-        raise e
-
-
-async def publish_to_pubsub(message_body: str):
-    topic_path = publisher.topic_path(settings.GCP_PROJECT, settings.PUBSUB_TOPIC_ID)
-    future = publisher.publish(topic_path, message_body.encode("utf-8"))
-    loop = asyncio.get_running_loop()
-
-    try:
-        await loop.run_in_executor(None, future.result)
-        logger.info(f"Published message to {settings.PUBSUB_TOPIC_ID}")
-    except Exception as e:
-        logger.error("Failed to publish message", extra={"error": e})
+    logger.success(f"Batch publish summary: {result}")
+    return result
