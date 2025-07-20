@@ -60,6 +60,7 @@ env = [
     "TELEGRAM_BOT_TOKEN=telegram-bot-token-test",
     "TELEGRAM_WEBHOOK_SECRET_TOKEN=telegram-webhook-secret-token-test",
     "PUBSUB_TOPIC_ID=pubsub-topic-id-test",
+    "GCP_PROJECT=sumio"
 ]
 
 [tool.taskipy.tasks]
