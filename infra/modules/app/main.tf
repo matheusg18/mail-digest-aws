@@ -370,6 +370,13 @@ resource "google_cloudfunctions2_function" "summary_worker_function" {
       secret     = google_secret_manager_secret.secrets["TELEGRAM_BOT_TOKEN"].secret_id
       version    = "latest"
     }
+
+    secret_environment_variables {
+      key        = "TOKEN_ENCRYPTION_KEY"
+      project_id = var.gcp_project_id
+      secret     = google_secret_manager_secret.secrets["TOKEN_ENCRYPTION_KEY"].secret_id
+      version    = "latest"
+    }
   }
 
   event_trigger {
