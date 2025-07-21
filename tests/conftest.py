@@ -14,6 +14,7 @@ def fake_supabase_chain():
         else:
             execute_mock.return_value = execute_mock
             execute_mock.data = data
+
         chain = MagicMock()
         current = chain
         for _ in range(eq_chain_count):
@@ -23,6 +24,11 @@ def fake_supabase_chain():
         current.execute = execute_mock
         current.eq.return_value = current
         chain.select.return_value = chain
+
+        insert_chain = MagicMock()
+        insert_chain.execute = execute_mock
+        chain.insert = MagicMock(return_value=insert_chain)
+
         return chain
 
     return _make_chain

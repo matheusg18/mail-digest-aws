@@ -16,9 +16,10 @@ async def list_user_delivery_channels(
     channel_type: Optional[DeliveryChannelEnum] = None,
 ) -> List[DeliveryChannel]:
     supabase_client = await create_supabase_client()
+
     try:
         logger.info(
-            f"Fetching delivery channels for user ID: {user_id}",
+            f"Fetching delivery channels for user ID: {str(user_id)}",
             extra={"is_active": is_active, "channel_type": str(channel_type)},
         )
 
@@ -32,7 +33,7 @@ async def list_user_delivery_channels(
         response = await query.execute()
 
         logger.info(
-            f"Delivery channels fetched successfully for user ID: {user_id}",
+            f"Delivery channels fetched successfully for user ID: {str(user_id)}",
             extra={"count": len(response.data)},
         )
         return [DeliveryChannel(**channel) for channel in response.data]
@@ -42,12 +43,12 @@ async def list_user_delivery_channels(
             "Error fetching active delivery channels",
             code=HTTPStatus.INTERNAL_SERVER_ERROR,
             details={
-                "user_id": user_id,
+                "user_id": str(user_id),
                 "is_active": is_active,
-                "channel_type": channel_type,
+                "channel_type": str(channel_type),
                 "error": str(e),
             },
-        )
+        ) from e
 
 
 async def add_delivery_channel(
@@ -57,6 +58,7 @@ async def add_delivery_channel(
     is_active: bool = True,
 ) -> DeliveryChannel:
     supabase_client = await create_supabase_client()
+
     try:
         delivery_channel = DeliveryChannel(
             user_id=user_id,
@@ -65,10 +67,7 @@ async def add_delivery_channel(
             is_active=is_active,
         )
 
-        logger.info(
-            "Adding delivery channel",
-            extra={"delivery_channel": delivery_channel.model_dump()},
-        )
+        logger.info("Adding delivery channel")
         response = await supabase_client.table("delivery_channels").insert(delivery_channel.model_dump()).execute()
 
         logger.success("Delivery channel added successfully")
@@ -79,10 +78,10 @@ async def add_delivery_channel(
             "Error adding delivery channel",
             code=HTTPStatus.INTERNAL_SERVER_ERROR,
             details={
-                "user_id": user_id,
+                "user_id": str(user_id),
                 "chat_id": chat_id,
-                "channel_type": channel_type,
+                "channel_type": str(channel_type),
                 "is_active": is_active,
                 "error": str(e),
             },
-        )
+        ) from e

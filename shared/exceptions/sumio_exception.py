@@ -21,3 +21,13 @@ class SumioException(Exception):
         if self.details:
             base += f" | details: {self.details}"
         return base
+
+    def to_dict(self):
+        return {
+            "type": self.__class__.__name__,
+            "message": self.message,
+            "code": self.code,
+            "details": self.details,
+        }
+
+    __json__ = to_dict
