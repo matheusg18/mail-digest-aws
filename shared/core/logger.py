@@ -1,10 +1,13 @@
 import json
 import sys
 import traceback
+from contextvars import ContextVar
 
 from loguru import logger
 
 from shared.core.settings import settings
+
+trace_id_var: ContextVar[str] = ContextVar("trace_id", default="-")
 
 logger.remove()
 
@@ -14,11 +17,13 @@ if settings.LOG_FORMAT == "text":
         format=(
             "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | "
             "<level>{level: <8}</level> | "
-            "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> -"
-            " <level>{message}</level>"
+            "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> | "
+            "<magenta>{extra[trace_id]}</magenta> - "
+            "<level>{message}</level>"
         ),
         level="INFO",
         colorize=True,
+        filter=lambda record: record["extra"].update({"trace_id": trace_id_var.get()}) or True,
     )
 else:
 
@@ -58,4 +63,5 @@ else:
     logger.add(
         sink=lambda msg: sys.stderr.write(gcp_formatter(msg.record)),  # type: ignore
         level="INFO",
+        filter=lambda record: record["extra"].update({"trace_id": trace_id_var.get()}) or True,
     )
