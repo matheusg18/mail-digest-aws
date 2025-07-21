@@ -19,6 +19,23 @@
             "justMyCode": true
         },
         {
+            "name": "Debug Worker Function",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "functions_framework",
+            "args": [
+                "--source=functions/worker/main.py",
+                "--target=handler",
+                "--port=8080",
+                "--debug"
+            ],
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            },
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
             "name": "Debug Pytest Current File",
             "type": "debugpy",
             "request": "launch",
