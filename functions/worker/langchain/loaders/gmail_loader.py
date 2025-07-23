@@ -4,9 +4,10 @@ from typing import Any, Dict, List
 
 from bs4 import BeautifulSoup
 from langchain.document_loaders.base import BaseLoader
-from langchain.schema import Document
 
 from shared.services import gmail_service
+
+from ..documents import EmailDocument, EmailMetadata
 
 
 class GmailLoader(BaseLoader):
@@ -17,15 +18,15 @@ class GmailLoader(BaseLoader):
         self.query = query
         self.access_token = access_token
 
-    async def aload(self) -> List[Document]:
+    async def aload(self) -> List[EmailDocument]:
         return await self._load_recent_emails(days=self.days, query=self.query)
 
-    async def _load_recent_emails(self, days: int = 1, query: str = "") -> List[Document]:
+    async def _load_recent_emails(self, days: int = 1, query: str = "") -> List[EmailDocument]:
         """Load emails from the last N days"""
         end_date = datetime.now()
-        start_date = end_date - timedelta(days=days)
+        start_date = end_date - timedelta(hours=6)
 
-        after_date = start_date.strftime("%Y/%m/%d")
+        after_date = int(start_date.timestamp())
         query_with_date = f"after:{after_date} {query}".strip()
 
         try:
@@ -39,23 +40,18 @@ class GmailLoader(BaseLoader):
             for message in messages:
                 email_data = await self._get_message_content(message["id"])
                 if email_data:
-                    content = (
-                        f"Subject: {email_data['subject']}\n"
-                        + f"From: {email_data['sender']}\n"
-                        + f"Date: {email_data['date']}\n\n"
-                        + email_data["body"].strip()
+                    metadata = EmailMetadata(
+                        message_id=email_data["id"],
+                        subject=email_data["subject"],
+                        sender=email_data["sender"],
+                        receiver=email_data["receiver"],
+                        date=email_data["date"],
+                        thread_id=email_data["thread_id"],
+                        labels=email_data["labels"],
                     )
-
-                    doc = Document(
-                        page_content=content,
-                        metadata={
-                            "message_id": email_data["id"],
-                            "subject": email_data["subject"],
-                            "sender": email_data["sender"],
-                            "date": email_data["date"],
-                            "thread_id": email_data["thread_id"],
-                            "labels": email_data["labels"],
-                        },
+                    doc = EmailDocument(
+                        page_content=email_data["body"].strip(),
+                        metadata=metadata,
                     )
                     documents.append(doc)
 
@@ -84,6 +80,10 @@ class GmailLoader(BaseLoader):
                 (h["value"] for h in headers if h["name"] == "From"),
                 "Unknown Sender",
             )
+            receiver = next(
+                (h["value"] for h in headers if h["name"] == "To"),
+                "Unknown Receiver",
+            )
             date = next(
                 (h["value"] for h in headers if h["name"] == "Date"),
                 "Unknown Date",
@@ -96,6 +96,7 @@ class GmailLoader(BaseLoader):
                 "id": message_id,
                 "subject": subject,
                 "sender": sender,
+                "receiver": receiver,
                 "date": date,
                 "body": body,
                 "thread_id": message.get("threadId", ""),
