@@ -38,6 +38,7 @@ class UserFactory(Factory):
     avatar_url = Faker("image_url")
     billing_address = None
     payment_method = None
+    timezone_code = "UTC"
 
 
 class DeliveryChannelFactory(Factory):

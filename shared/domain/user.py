@@ -1,7 +1,10 @@
 import uuid
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
+from zoneinfo import ZoneInfo
 
 from pydantic import BaseModel, ConfigDict
+
+from shared.domain.mail_account import MailAccount
 
 
 class User(BaseModel):
@@ -17,3 +20,9 @@ class User(BaseModel):
     avatar_url: Optional[str] = None
     billing_address: Optional[Dict[str, Any]] = None
     payment_method: Optional[Dict[str, Any]] = None
+    timezone_code: str
+
+    mail_accounts: Optional[List[MailAccount]] = None
+
+    def get_timezone(self) -> ZoneInfo:
+        return ZoneInfo(self.timezone_code)

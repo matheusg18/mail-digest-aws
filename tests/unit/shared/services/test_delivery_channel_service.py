@@ -68,9 +68,9 @@ async def test_add_delivery_channel_success(mock_create_client, fake_supabase_cl
     insert_mock = mock_create_client.return_value.table.return_value.insert
     insert_mock.assert_called_once()
     insert_args = insert_mock.call_args[0][0]
-    assert insert_args["user_id"] == user_id
+    assert insert_args["user_id"] == str(user_id)
     assert insert_args["address"] == str(chat_id)
-    assert insert_args["channel_type"] == channel_type
+    assert insert_args["channel_type"] == channel_type.value
     assert insert_args["is_active"] is True
     assert "id" in insert_args
     assert "created_at" in insert_args
