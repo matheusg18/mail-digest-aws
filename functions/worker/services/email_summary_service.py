@@ -1,15 +1,13 @@
-import json
 import uuid
+from datetime import datetime, timezone
+from http import HTTPStatus
 from typing import List
 
-from chains import (
-    generate_aggregated_summary,
-    summarize_email_chain,
-)
 from langchain.schema import Document
-from loaders.gmail_loader import GmailLoader
 from loguru import logger
 
+from shared.domain.mail_account import MailAccount
+from shared.exceptions.sumio_exception import SumioException
 from shared.services import (
     google_auth_service,
     mail_account_service,
@@ -19,34 +17,26 @@ from shared.services.delivery_channel_service import (
     list_user_delivery_channels,
 )
 
+from ..langchain.loaders import GmailLoader
+from ..templates.summary_templates import get_template
 
-async def generate_daily_email_summary(mail_account_id: uuid.UUID) -> None:
-    mail_account = await mail_account_service.get_mail_account(mail_account_id)
-    if not mail_account:
-        raise ValueError(f"Mail account with ID {mail_account_id} not found.")
 
-    if not mail_account.credentials:
-        raise ValueError(f"Mail account with ID {mail_account_id} does not have credentials")
+async def generate_daily_email_summary(user_id: uuid.UUID) -> None:
+    mail_account = await _get_user_mail_account(user_id)
 
     gmail_loader = GmailLoader(
-        await google_auth_service.get_access_token(mail_account.credentials),
+        await google_auth_service.get_access_token(mail_account.credentials),  # pyright: ignore[reportArgumentType]
         days=1,
     )
-    documents = await gmail_loader.aload()
+    emails = await gmail_loader.aload()
 
-    if not documents:
+    if not emails:
         logger.warning("No emails found for today.")
         raise ValueError("No emails found for today. Please check your Gmail settings.")
 
-    logger.info(f"Found {len(documents)} emails to summarize.")
-    summaries = await _batch_summarize_emails(documents)
-
-    aggregated_summary = await generate_aggregated_summary.chain.ainvoke(
-        {"summaries": json.dumps([summary.model_dump() for summary in summaries], indent=2)},
-        {
-            "run_name": "executive_summary",
-        },
-    )
+    logger.info(f"Found {len(emails)} emails to summarize.")
+    template_fn = get_template("classic")
+    summary = await template_fn(emails, {"now": datetime.now(timezone.utc)})
 
     active_delivery_channels = await list_user_delivery_channels(
         mail_account.user_id,
@@ -59,20 +49,25 @@ async def generate_daily_email_summary(mail_account_id: uuid.UUID) -> None:
     logger.info(f"Sending aggregated summary to Telegram channel: {telegram_delivery_channel.address}")
     await telegram_service.send_message(
         int(telegram_delivery_channel.address),
-        str(aggregated_summary.content),
+        summary,
     )
 
 
-async def _batch_summarize_emails(documents: List[Document]) -> list[Document]:
-    logger.info(f"Summarizing {len(documents)} emails in batch.")
-    input_data_list = [
-        {
-            "subject": email.metadata["subject"],
-            "sender": email.metadata["sender"],
-            "date": email.metadata["date"],
-            "body": email.page_content,
-        }
-        for email in documents
-    ]
+async def _get_user_mail_account(user_id: uuid.UUID) -> MailAccount:
+    mail_accounts = await mail_account_service.list_user_mail_accounts(user_id)
+    if len(mail_accounts) == 0:
+        raise SumioException(
+            "No mail accounts found for user",
+            code=HTTPStatus.NOT_FOUND,
+            details={"user_id": str(user_id)},
+        )
 
-    return await summarize_email_chain.chain.abatch(input_data_list, {"run_name": "generate_summary"})
+    mail_account = mail_accounts[0]
+    if not mail_account.credentials:
+        raise SumioException(
+            "Mail account does not have credentials",
+            code=HTTPStatus.BAD_REQUEST,
+            details={"mail_account_id": str(mail_account.id)},
+        )
+
+    return await mail_account_service.get_mail_account(mail_account.id) or mail_account
