@@ -1,3 +1,4 @@
+import json
 from http import HTTPStatus
 from unittest.mock import AsyncMock, patch
 
@@ -198,15 +199,32 @@ async def test_send_message_success():
     text = "Hello, world!"
     url = f"{TELEGRAM_API_URL}/sendMessage"
 
-    respx.post(url).mock(return_value=Response(HTTPStatus.OK, json={"ok": True}))
+    route = respx.post(url).mock(return_value=Response(HTTPStatus.OK, json={"ok": True}))
 
-    # Should not raise
     await telegram_service.send_message(chat_id, text)
+
+    assert route.called
+    assert route.call_count == 1
+    assert json.loads(route.calls[0][0].content.decode()) == {"chat_id": chat_id, "text": text}
 
 
 @pytest.mark.asyncio
 @respx.mock
-async def test_send_message_failure_status():
+async def test_send_message_empty_text():
+    chat_id = 123456
+    text = ""
+    url = f"{TELEGRAM_API_URL}/sendMessage"
+
+    route = respx.post(url).mock(return_value=Response(HTTPStatus.OK, json={"ok": True}))
+
+    await telegram_service.send_message(chat_id, text)
+
+    assert not route.called
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_send_message_failure():
     chat_id = 123456
     text = "Hello, world!"
     url = f"{TELEGRAM_API_URL}/sendMessage"
@@ -216,21 +234,22 @@ async def test_send_message_failure_status():
     with pytest.raises(SumioException) as exc_info:
         await telegram_service.send_message(chat_id, text)
 
-    assert exc_info.value.message == "Failed to send Telegram message"
-    assert exc_info.value.code == HTTPStatus.BAD_REQUEST
+    assert exc_info.value.message.startswith("Failed to send Telegram message")
+    assert exc_info.value.code == HTTPStatus.INTERNAL_SERVER_ERROR
 
 
 @pytest.mark.asyncio
 @respx.mock
-async def test_send_message_failure_json():
+async def test_send_message_long_text():
     chat_id = 123456
-    text = "Hello, world!"
+    text = "A" * 5000
     url = f"{TELEGRAM_API_URL}/sendMessage"
 
-    respx.post(url).mock(return_value=Response(HTTPStatus.OK, json={"ok": False}))
+    route = respx.post(url).mock(return_value=Response(HTTPStatus.OK, json={"ok": True}))
 
-    with pytest.raises(SumioException) as exc_info:
-        await telegram_service.send_message(chat_id, text)
+    await telegram_service.send_message(chat_id, text)
 
-    assert exc_info.value.message == "Failed to send Telegram message"
-    assert exc_info.value.code == HTTPStatus.OK
+    assert route.called
+    assert route.call_count == 2  # noqa: PLR2004
+    assert json.loads(route.calls[0][0].content.decode()) == {"chat_id": chat_id, "text": "A" * 4096}
+    assert json.loads(route.calls[1][0].content.decode()) == {"chat_id": chat_id, "text": "A" * 904}

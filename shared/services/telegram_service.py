@@ -2,6 +2,7 @@ import uuid
 from http import HTTPStatus
 
 import httpx
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 from loguru import logger
 
 from shared.core.settings import settings
@@ -11,6 +12,7 @@ from shared.exceptions.sumio_exception import SumioException
 from shared.services import delivery_channel_service, user_service
 
 TELEGRAM_API_URL = f"https://api.telegram.org/bot{settings.TELEGRAM_BOT_TOKEN}"
+MAX_MESSAGE_LENGTH = 4096
 
 
 async def process_webhook_message(message: TelegramMessage) -> None:
@@ -91,20 +93,37 @@ async def _user_already_has_telegram_channel(user_id: uuid.UUID) -> bool:
 
 
 async def send_message(chat_id: int, text: str) -> None:
-    async with httpx.AsyncClient() as client:
-        response = await client.post(
-            f"{TELEGRAM_API_URL}/sendMessage",
-            json={"chat_id": chat_id, "text": text},
-        )
+    if not text:
+        return
 
-        is_ok = response.status_code == HTTPStatus.OK and response.json().get("ok", False)
-        if not is_ok:
-            raise SumioException(
-                "Failed to send Telegram message",
-                code=response.status_code,
-                details={
-                    "chat_id": chat_id,
-                    "text": text,
-                    "response": response.json(),
-                },
+    if len(text) <= MAX_MESSAGE_LENGTH:
+        await _post_telegram_message(chat_id, text)
+        return
+
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=MAX_MESSAGE_LENGTH,
+        chunk_overlap=0,
+        length_function=len,
+    )
+
+    chunks = text_splitter.split_text(text)
+
+    for chunk in chunks:
+        await _post_telegram_message(chat_id, chunk)
+
+
+async def _post_telegram_message(chat_id: int, text: str) -> None:
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.post(
+                f"{TELEGRAM_API_URL}/sendMessage",
+                json={"chat_id": chat_id, "text": text},
+                timeout=20.0,
             )
+            response.raise_for_status()
+        except Exception as e:
+            raise SumioException(
+                f"Failed to send Telegram message: {e}",
+                code=HTTPStatus.INTERNAL_SERVER_ERROR,
+                details={"chat_id": chat_id, "text": text},
+            ) from e
