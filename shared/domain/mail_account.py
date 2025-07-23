@@ -12,7 +12,13 @@ class EmailProviderEnum(Enum):
 
 
 class MailAccount(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(
+        from_attributes=True,
+        json_encoders={
+            uuid.UUID: str,
+            datetime: lambda v: v.isoformat(),
+        },
+    )
 
     id: uuid.UUID = Field(default_factory=uuid.uuid4)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
@@ -22,15 +28,3 @@ class MailAccount(BaseModel):
     email_address: str
     credentials: Optional[Dict[str, Any]] = None
     is_active: bool = True
-
-    def deactivate(self):
-        self.is_active = False
-        self.updated_at = datetime.now(timezone.utc)
-
-    def activate(self):
-        self.is_active = True
-        self.updated_at = datetime.now(timezone.utc)
-
-    def update_credentials(self, new_credentials: Dict[str, Any]):
-        self.credentials = new_credentials
-        self.updated_at = datetime.now(timezone.utc)

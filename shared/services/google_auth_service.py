@@ -4,6 +4,7 @@ import httpx
 from loguru import logger
 
 from shared.core.settings import settings
+from shared.exceptions.sumio_exception import SumioException
 
 GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
 
@@ -29,6 +30,19 @@ async def _refresh_access_token(refresh_token: str) -> dict:
     }
 
     async with httpx.AsyncClient() as client:
-        response = await client.post(GOOGLE_TOKEN_URL, data=data)
-        response.raise_for_status()
-        return response.json()
+        try:
+            response = await client.post(GOOGLE_TOKEN_URL, data=data)
+            response.raise_for_status()
+            return response.json()
+        except httpx.HTTPStatusError as e:
+            logger.error(f"Failed to refresh token: {e.response.status_code} - {e.response.text}")
+
+            error_data = e.response.json()
+            error_reason = error_data.get("error")
+            if error_reason in {"invalid_grant", "unauthorized_client"}:
+                raise SumioException("The refresh token is invalid or has expired.")
+            raise SumioException(
+                "Failed to refresh access token",
+                code=e.response.status_code,
+                details={"error": error_data},
+            ) from e

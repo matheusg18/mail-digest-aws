@@ -68,7 +68,9 @@ async def add_delivery_channel(
         )
 
         logger.info("Adding delivery channel")
-        response = await supabase_client.table("delivery_channels").insert(delivery_channel.model_dump()).execute()
+        response = (
+            await supabase_client.table("delivery_channels").insert(delivery_channel.model_dump(mode="json")).execute()
+        )
 
         logger.success("Delivery channel added successfully")
         return DeliveryChannel(**response.data[0])

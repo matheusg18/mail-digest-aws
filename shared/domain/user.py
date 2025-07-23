@@ -5,7 +5,12 @@ from pydantic import BaseModel, ConfigDict
 
 
 class User(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(
+        from_attributes=True,
+        json_encoders={
+            uuid.UUID: str,
+        },
+    )
 
     id: uuid.UUID
     full_name: Optional[str] = None

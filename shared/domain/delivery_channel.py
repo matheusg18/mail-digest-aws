@@ -12,7 +12,13 @@ class DeliveryChannelEnum(Enum):
 
 
 class DeliveryChannel(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(
+        from_attributes=True,
+        json_encoders={
+            uuid.UUID: str,
+            datetime: lambda v: v.isoformat(),
+        },
+    )
 
     user_id: uuid.UUID
     channel_type: DeliveryChannelEnum
@@ -21,11 +27,3 @@ class DeliveryChannel(BaseModel):
     id: uuid.UUID = Field(default_factory=uuid.uuid4)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-
-    def deactivate(self):
-        self.is_active = False
-        self.updated_at = datetime.now(timezone.utc)
-
-    def activate(self):
-        self.is_active = True
-        self.updated_at = datetime.now(timezone.utc)
