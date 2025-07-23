@@ -5,6 +5,7 @@ from loguru import logger
 
 from shared.core.settings import settings
 from shared.exceptions.sumio_exception import SumioException
+from shared.utils.security.crypto import decrypt_token
 
 GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
 
@@ -14,9 +15,10 @@ async def get_access_token(mail_account_credentials: Dict[str, Any]) -> str:
         logger.warning("No refresh token found in mail account credentials.")
         raise ValueError("No refresh token found in mail account credentials.")
 
-    tokens = await _refresh_access_token(mail_account_credentials["refresh_token"])
-    logger.info("Access token refreshed successfully.")
+    decrypted_token = decrypt_token(mail_account_credentials["refresh_token"])
+    tokens = await _refresh_access_token(decrypted_token)
 
+    logger.success("Access token refreshed successfully.")
     return tokens["access_token"]
 
 

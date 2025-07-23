@@ -55,3 +55,22 @@ async def get_users_with_active_mail_digest_at(
             code=HTTPStatus.INTERNAL_SERVER_ERROR,
             details={"digest_hour": digest_hour, "error": str(e)},
         ) from e
+
+
+async def get_user_with_mail_accounts(user_id: uuid.UUID) -> User:
+    logger.info(f"Fetching user with mail accounts for user ID: {str(user_id)}")
+    supabase = await create_supabase_client()
+
+    try:
+        response = await supabase.table("users").select("*, mail_accounts(*)").eq("id", str(user_id)).single().execute()
+        user = User(**response.data)
+
+        logger.success("Found user with mail accounts")
+        return user
+    except Exception as e:
+        logger.error("Error fetching user with mail accounts", extra={"error": e})
+        raise SumioException(
+            "Error fetching user with mail accounts",
+            code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            details={"error": str(e)},
+        ) from e
