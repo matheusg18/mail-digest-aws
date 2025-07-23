@@ -1,6 +1,7 @@
 import base64
 from datetime import datetime, timedelta
 from typing import Any, Dict, List
+from zoneinfo import ZoneInfo
 
 from bs4 import BeautifulSoup
 from langchain.document_loaders.base import BaseLoader
@@ -24,7 +25,7 @@ class GmailLoader(BaseLoader):
     async def _load_recent_emails(self, days: int = 1, query: str = "") -> List[EmailDocument]:
         """Load emails from the last N days"""
         end_date = datetime.now()
-        start_date = end_date - timedelta(hours=6)
+        start_date = end_date - timedelta(days=days)
 
         after_date = int(start_date.timestamp())
         query_with_date = f"after:{after_date} {query}".strip()
@@ -84,9 +85,11 @@ class GmailLoader(BaseLoader):
                 (h["value"] for h in headers if h["name"] == "To"),
                 "Unknown Receiver",
             )
-            date = next(
-                (h["value"] for h in headers if h["name"] == "Date"),
-                "Unknown Date",
+            date = self._convert_date(
+                next(
+                    (h["value"] for h in headers if h["name"] == "Date"),
+                    "Unknown Date",
+                )
             )
 
             # Extract body
@@ -105,6 +108,15 @@ class GmailLoader(BaseLoader):
         except Exception as e:
             print(f"Error getting message {message_id}: {e}")
             return None
+
+    @staticmethod
+    def _convert_date(date_str: str) -> datetime:
+        date_str_parts = date_str.split(" (")
+        cleaned_str = date_str_parts[0]
+        timezone = date_str_parts[1].replace(")", "") if len(date_str_parts) > 1 else "UTC"
+
+        dt = datetime.strptime(cleaned_str, "%a, %d %b %Y %H:%M:%S %z").astimezone(ZoneInfo(timezone))
+        return dt
 
     def _extract_body(self, payload, message_id: str) -> str:
         if "parts" in payload:

@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from datetime import datetime
 from typing import List
 
 from langchain.schema import Document
@@ -10,7 +11,7 @@ class EmailMetadata:
     subject: str = ""
     sender: str = ""
     receiver: str = ""
-    date: str = ""
+    date: datetime = datetime.now()
     thread_id: str = ""
     labels: List[str] = field(default_factory=list)
 
