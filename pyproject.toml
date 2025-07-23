@@ -30,6 +30,7 @@ cryptography = "^45.0.5"
 google-cloud-pubsub = "^2.31.0"
 
 [tool.poetry.group.telegram_webhook.dependencies]
+langchain = "^0.3.26"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.4.0"
