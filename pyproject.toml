@@ -28,9 +28,10 @@ langchain-openai = "^0.3.27"
 beautifulsoup4 = "^4.13.4"
 cryptography = "^45.0.5"
 google-cloud-pubsub = "^2.31.0"
+telegramify-markdown = "^0.5.1"
 
 [tool.poetry.group.telegram_webhook.dependencies]
-langchain = "^0.3.26"
+telegramify-markdown = "^0.5.1"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.4.0"

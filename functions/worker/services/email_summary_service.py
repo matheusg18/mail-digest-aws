@@ -1,5 +1,4 @@
 import uuid
-from datetime import datetime, timezone
 from http import HTTPStatus
 
 from loguru import logger
@@ -32,7 +31,10 @@ async def generate_daily_email_summary(user_id: uuid.UUID) -> None:
 
     logger.info(f"Found {len(emails)} emails to summarize.")
     template_fn = get_template("classic")
-    summary = await template_fn(emails, {"timezone": user.get_timezone()})
+    summary = await template_fn(
+        {user.mail_accounts[0].email_address: emails},
+        {"timezone": user.get_timezone()},
+    )
 
     active_delivery_channels = await delivery_channel_service.list_user_delivery_channels(
         user.id,

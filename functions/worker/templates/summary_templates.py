@@ -1,10 +1,10 @@
-from typing import Awaitable, Callable, List
+from typing import Awaitable, Callable, Dict, List
 
 from ..langchain.documents.email_document import EmailDocument
 
-SummaryTemplateFn = Callable[[List[EmailDocument], dict], Awaitable[str]]
+SummaryTemplateFn = Callable[[Dict[str, List[EmailDocument]], Dict], Awaitable[str]]
 
-TEMPLATE_REGISTRY: dict[str, SummaryTemplateFn] = {}
+TEMPLATE_REGISTRY: Dict[str, SummaryTemplateFn] = {}
 
 
 def register_template(name: str, fn: SummaryTemplateFn):

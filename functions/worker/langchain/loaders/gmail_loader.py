@@ -1,7 +1,6 @@
 import base64
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List
-from zoneinfo import ZoneInfo
 
 from bs4 import BeautifulSoup
 from langchain.document_loaders.base import BaseLoader
@@ -111,11 +110,8 @@ class GmailLoader(BaseLoader):
 
     @staticmethod
     def _convert_date(date_str: str) -> datetime:
-        date_str_parts = date_str.split(" (")
-        cleaned_str = date_str_parts[0]
-        timezone = date_str_parts[1].replace(")", "") if len(date_str_parts) > 1 else "UTC"
-
-        dt = datetime.strptime(cleaned_str, "%a, %d %b %Y %H:%M:%S %z").astimezone(ZoneInfo(timezone))
+        cleaned_str = date_str.split(" (", 1)[0]
+        dt = datetime.strptime(cleaned_str, "%a, %d %b %Y %H:%M:%S %z").astimezone(timezone.utc)
         return dt
 
     def _extract_body(self, payload, message_id: str) -> str:

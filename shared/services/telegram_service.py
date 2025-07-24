@@ -2,8 +2,9 @@ import uuid
 from http import HTTPStatus
 
 import httpx
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+import telegramify_markdown
 from loguru import logger
+from telegramify_markdown.interpreters import InterpreterChain, TextInterpreter
 
 from shared.core.settings import settings
 from shared.domain.delivery_channel import DeliveryChannelEnum
@@ -96,20 +97,9 @@ async def send_message(chat_id: int, text: str) -> None:
     if not text:
         return
 
-    if len(text) <= MAX_MESSAGE_LENGTH:
-        await _post_telegram_message(chat_id, text)
-        return
-
-    text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=MAX_MESSAGE_LENGTH,
-        chunk_overlap=0,
-        length_function=len,
-    )
-
-    chunks = text_splitter.split_text(text)
-
+    chunks = await telegramify_markdown.telegramify(text, interpreters_use=InterpreterChain([TextInterpreter()]))
     for chunk in chunks:
-        await _post_telegram_message(chat_id, chunk)
+        await _post_telegram_message(chat_id, chunk.content)  # pyright: ignore[reportAttributeAccessIssue]
 
 
 async def _post_telegram_message(chat_id: int, text: str) -> None:
@@ -117,7 +107,7 @@ async def _post_telegram_message(chat_id: int, text: str) -> None:
         try:
             response = await client.post(
                 f"{TELEGRAM_API_URL}/sendMessage",
-                json={"chat_id": chat_id, "text": text},
+                json={"chat_id": chat_id, "text": text, "parse_mode": "MarkdownV2"},
                 timeout=20.0,
             )
             response.raise_for_status()

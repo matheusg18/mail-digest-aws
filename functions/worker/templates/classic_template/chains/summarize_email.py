@@ -8,6 +8,8 @@ from pydantic import SecretStr
 
 from shared.core.settings import settings
 
+from ..schemas.email_summary_schema import EmailSummarySchema
+
 _llm = ChatOpenAI(
     model="gpt-4.1-nano",
     max_completion_tokens=300,
@@ -30,7 +32,7 @@ _email_summary_prompt_template = ChatPromptTemplate.from_messages([
     _human_prompt_template,
 ])
 
-_summary_generation_chain = _email_summary_prompt_template | _llm
+_summary_generation_chain = _email_summary_prompt_template | _llm.with_structured_output(EmailSummarySchema)
 
 
 def _formatter(input_dict: Dict) -> Dict:
@@ -39,7 +41,8 @@ def _formatter(input_dict: Dict) -> Dict:
         "sender": input_dict["original_input"]["sender"],
         "receiver": input_dict["original_input"]["receiver"],
         "date": input_dict["original_input"]["date"],
-        "summary": input_dict["summary_message"].text(),
+        "summary": input_dict["summary_message"].short_summary,
+        "emoji": input_dict["summary_message"].emoji,
     }
 
 
