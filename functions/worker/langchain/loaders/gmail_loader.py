@@ -1,4 +1,5 @@
 import base64
+import re
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List
 
@@ -123,6 +124,7 @@ class GmailLoader(BaseLoader):
                 print("Extracting text/plain part", message_id)
                 data = payload["body"]["data"]
                 body = base64.urlsafe_b64decode(data).decode("utf-8")
+                body = self._clean_links(body)
                 lines = body.splitlines()
                 cleaned_lines = [line.strip() for line in lines if line.strip()]
                 return "\n".join(cleaned_lines)
@@ -132,10 +134,20 @@ class GmailLoader(BaseLoader):
                 body = base64.urlsafe_b64decode(data).decode("utf-8")
                 soup = BeautifulSoup(body, "html.parser")
                 text = soup.get_text()
+                text = self._clean_links(text)
                 lines = text.splitlines()
                 cleaned_lines = [line.strip() for line in lines if line.strip()]
                 return "\n".join(cleaned_lines)
         return ""
+
+    @staticmethod
+    def _clean_links(text_body: str) -> str:
+        """
+        Replace all URLs in a text with "external_link".
+        """
+        url_pattern = r"(?:(?:https?|ftp):\/\/|www\.)[^\s>]+"
+
+        return re.sub(url_pattern, "external_link", text_body)
 
     def _walk_parts(self, parts: List[Dict[str, Any]], message_id: str) -> str:
         for part in parts:
@@ -147,6 +159,7 @@ class GmailLoader(BaseLoader):
                 print("Extracting text/plain part", message_id)
                 data = part["body"]["data"]
                 body = base64.urlsafe_b64decode(data).decode("utf-8")
+                body = self._clean_links(body)
                 lines = body.splitlines()
                 cleaned_lines = [line.strip() for line in lines if line.strip()]
                 return "\n".join(cleaned_lines)
@@ -156,6 +169,7 @@ class GmailLoader(BaseLoader):
                 body = base64.urlsafe_b64decode(data).decode("utf-8")
                 soup = BeautifulSoup(body, "html.parser")
                 text = soup.get_text()
+                text = self._clean_links(text)
                 lines = text.splitlines()
                 cleaned_lines = [line.strip() for line in lines if line.strip()]
                 return "\n".join(cleaned_lines)

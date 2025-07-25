@@ -24,7 +24,7 @@ _system_prompt = SystemMessage(
     "no more than one sentence, in pt-BR."
 )
 _human_prompt_template = HumanMessagePromptTemplate.from_template(
-    "Subject: {subject}\nFrom: {sender}\nDate: {date}\n\n{body}\n\nSummary:"
+    "Subject: {subject}\nFrom: {sender}\nDate: {date}\n\n{body}"
 )
 
 _email_summary_prompt_template = ChatPromptTemplate.from_messages([
