@@ -1,11 +1,11 @@
 import uuid
 from http import HTTPStatus
 
-import httpx
 import telegramify_markdown
 from loguru import logger
 from telegramify_markdown.interpreters import InterpreterChain, TextInterpreter
 
+from shared.clients import telegram_client
 from shared.core.settings import settings
 from shared.domain.delivery_channel import DeliveryChannelEnum
 from shared.domain.telegram.telegram_message import TelegramMessage
@@ -94,26 +94,36 @@ async def _user_already_has_telegram_channel(user_id: uuid.UUID) -> bool:
 
 
 async def send_message(chat_id: int, text: str) -> None:
-    if not text:
-        return
+    logger.info(f"Preparing to send message to chat_id={chat_id}")
 
     chunks = await telegramify_markdown.telegramify(text, interpreters_use=InterpreterChain([TextInterpreter()]))
-    for chunk in chunks:
-        await _post_telegram_message(chat_id, chunk.content)  # pyright: ignore[reportAttributeAccessIssue]
+    logger.info(f"Message chunks: {len(chunks)}")
 
-
-async def _post_telegram_message(chat_id: int, text: str) -> None:
-    async with httpx.AsyncClient() as client:
+    for i, chunk in enumerate(chunks):
         try:
-            response = await client.post(
-                f"{TELEGRAM_API_URL}/sendMessage",
-                json={"chat_id": chat_id, "text": text, "parse_mode": "MarkdownV2"},
-                timeout=20.0,
-            )
-            response.raise_for_status()
+            logger.info(f"Sending chunk {i + 1}/{len(chunks)} to chat_id={chat_id}")
+            await telegram_client.send_message(chat_id, chunk.content)  # pyright: ignore[reportAttributeAccessIssue]
         except Exception as e:
+            logger.error(f"Failed to send chunk {i + 1}/{len(chunks)} to chat_id={chat_id}: {e}")
             raise SumioException(
-                f"Failed to send Telegram message: {e}",
+                f"Failed to send message chunk {i + 1} to chat_id={chat_id}",
                 code=HTTPStatus.INTERNAL_SERVER_ERROR,
-                details={"chat_id": chat_id, "text": text},
+                details={"error": str(e), "chat_id": chat_id, "chunk_index": i, "total_chunks": len(chunks)},
             ) from e
+
+    logger.success(f"Message sent successfully to chat_id={chat_id}")
+
+
+async def send_voice(chat_id: str, audio_content: bytes) -> None:
+    logger.info(f"Preparing to send voice message to chat_id={chat_id}")
+
+    try:
+        await telegram_client.send_voice(chat_id, audio_content)
+        logger.success(f"Voice message sent to chat_id={chat_id}")
+    except Exception as e:
+        logger.error(f"Failed to send voice message to chat_id={chat_id}: {e}")
+        raise SumioException(
+            f"Failed to send voice message to chat_id={chat_id}",
+            code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            details={"error": str(e), "chat_id": chat_id},
+        ) from e
