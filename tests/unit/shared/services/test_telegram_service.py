@@ -1,13 +1,9 @@
-import json
 from http import HTTPStatus
 from unittest.mock import AsyncMock, patch
 
 import httpx
 import pytest
-import respx
-from httpx import Response
 
-from shared.clients import telegram_client
 from shared.core.settings import settings
 from shared.domain.delivery_channel import DeliveryChannelEnum
 from shared.exceptions.sumio_exception import SumioException
